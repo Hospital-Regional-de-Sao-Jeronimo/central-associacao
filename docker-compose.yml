@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: central-associacao-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: central_associacao
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "2345:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+
+    container_name: central-associacao-api
+
+    depends_on:
+      - postgres
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - ./backend:/app
+
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/central_associacao
+
+    command: pnpm start:dev
+
+  frontend:
+    build:
+      context: ./frontend
+
+    container_name: central-associacao-web
+
+    depends_on:
+      - backend
+
+    ports:
+      - "5173:5173"
+
+    volumes:
+      - ./frontend:/app
+
+    environment:
+      VITE_API_URL: http://localhost:3000
+
+    command: pnpm dev --host
+
+volumes:
+  postgres_data:

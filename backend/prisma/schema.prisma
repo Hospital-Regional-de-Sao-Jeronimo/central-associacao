@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum BenefitCategory {
+  ALIMENTACAO
+  SAUDE
+  LAZER
+  EDUCACAO
+  SERVICOS
+  VAREJO
+  OUTROS
+}
+
+model Associate {
+  id              String    @id @default(uuid())
+  name            String
+  cpf             String    @unique
+  email           String    @unique
+  phone           String?
+  birthDate       DateTime  @map("birth_date")
+  address         String
+  admissionDate   DateTime  @map("admission_date")
+  associationDate DateTime  @map("association_date")
+  cardNumber      String?   @unique @map("card_number")
+  cardRetrieved   Boolean   @default(false) @map("card_retrieved")
+  cardRetrievedAt DateTime? @map("card_retrieved_at")
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  @@map("associates")
+}
+
+model PartnerBenefit {
+  id                 String          @id @default(uuid())
+  name               String
+  category           BenefitCategory @default(OUTROS)
+  discountPercentage String          @map("discount_percentage")
+  description        String?
+  location           String
+  phone              String?
+  website            String?
+  imageUrl           String?         @map("image_url")
+  active             Boolean         @default(true)
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  deletedAt          DateTime?       @map("deleted_at")
+
+  @@map("partner_benefits")
+}
+
