@@ -10,13 +10,16 @@ import {
   RotateCw,
   Eye,
   X,
+  ShieldCheck,
 } from 'lucide-react';
 
 import type { Associate } from '../types';
 import { api } from '../lib/api';
 import { AssociateModal } from './AssociateModal';
+import { LdapSearchModal } from './LdapSearchModal';
 
 export const AssociatesPage: React.FC = () => {
+  // Associates State
   const [associates, setAssociates] = useState<Associate[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -26,6 +29,9 @@ export const AssociatesPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAssociate, setEditingAssociate] = useState<Associate | null>(null);
   const [selectedAssociateForView, setSelectedAssociateForView] = useState<Associate | null>(null);
+
+  // LDAP Search Modal
+  const [isLdapModalOpen, setIsLdapModalOpen] = useState(false);
 
   const fetchAssociates = async () => {
     setLoading(true);
@@ -101,14 +107,28 @@ export const AssociatesPage: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-6">
-      {/* Title Header */}
-      <div>
-        <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
-          Quadro de Associados
-        </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-          Acompanhe e gerencie os cadastros dos funcionários associados do HRSJ.
-        </p>
+      
+      {/* Title Header with Action Buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+        <div>
+          <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+            Quadro de Associados
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+            Acompanhe e gerencie os cadastros dos funcionários associados do HRSJ.
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setIsLdapModalOpen(true)}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition cursor-pointer"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Cadastrar do LDAP</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Card Container */}
@@ -190,7 +210,7 @@ export const AssociatesPage: React.FC = () => {
       <div className="border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
         <div className="bg-slate-50/70 dark:bg-slate-800/40 px-5 py-3 border-b border-slate-200/80 dark:border-slate-800">
           <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-            Total: {associates.length} associados
+            Total: {associates.length} associados no banco da Central
           </span>
         </div>
 
@@ -203,7 +223,7 @@ export const AssociatesPage: React.FC = () => {
           <div className="p-12 text-center text-slate-500">
             <Users className="w-10 h-10 mx-auto mb-2 text-slate-300 dark:text-slate-700" />
             <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-              Nenhum associado encontrado
+              Nenhum associado encontrado no banco de dados.
             </p>
           </div>
         ) : (
@@ -304,7 +324,6 @@ export const AssociatesPage: React.FC = () => {
                     {/* Ações */}
                     <td className="py-3.5 px-4 text-center">
                       <div className="flex items-center justify-center space-x-1.5">
-                        {/* View Button */}
                         <button
                           onClick={() => setSelectedAssociateForView(associate)}
                           className="p-1.5 rounded-full bg-sky-100 text-sky-700 hover:bg-sky-200 transition cursor-pointer"
@@ -313,7 +332,6 @@ export const AssociatesPage: React.FC = () => {
                           <Eye className="w-3.5 h-3.5" />
                         </button>
 
-                        {/* Edit Button */}
                         <button
                           onClick={() => {
                             setEditingAssociate(associate);
@@ -325,7 +343,6 @@ export const AssociatesPage: React.FC = () => {
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
 
-                        {/* Delete Button */}
                         <button
                           onClick={() => handleDelete(associate.id, associate.name)}
                           className="p-1.5 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-200 transition cursor-pointer"
@@ -343,7 +360,7 @@ export const AssociatesPage: React.FC = () => {
         )}
       </div>
 
-      {/* View Detail Modal */}
+      {/* View Detail Modal for Associate */}
       {selectedAssociateForView && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
@@ -384,7 +401,7 @@ export const AssociatesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Edit/Create Modal */}
+      {/* Edit/Create Associate Modal */}
       <AssociateModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -393,6 +410,15 @@ export const AssociatesPage: React.FC = () => {
         }}
         onSave={handleSave}
         associateToEdit={editingAssociate}
+      />
+
+      {/* LDAP Import Modal */}
+      <LdapSearchModal
+        isOpen={isLdapModalOpen}
+        onClose={() => setIsLdapModalOpen(false)}
+        onAssociateRegistered={() => {
+          fetchAssociates();
+        }}
       />
     </div>
   );

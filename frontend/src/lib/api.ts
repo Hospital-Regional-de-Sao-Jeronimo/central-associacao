@@ -1,11 +1,13 @@
-import type { Associate, BenefitCategory, PartnerBenefit } from '../types';
+import type { Associate, BenefitCategory, PartnerBenefit, LdapUserSearchResult, LdapUser, RegisterLdapUserPayload, HomeContent } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('hrsj_token');
   const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers,
     },
     ...options,
@@ -102,4 +104,42 @@ export const api = {
       method: 'DELETE',
     });
   },
+
+  // LDAP Integration
+  searchLdap: (query: string) => {
+    const searchParams = new URLSearchParams({ query });
+    return fetchJson<LdapUserSearchResult[]>(`${API_BASE_URL}/ldap/search?${searchParams.toString()}`);
+  },
+
+  registerLdapUser: (data: RegisterLdapUserPayload) => {
+    return fetchJson<LdapUser>(`${API_BASE_URL}/ldap/register`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getLdapUsers: (search?: string) => {
+    const query = search ? `?search=${encodeURIComponent(search)}` : '';
+    return fetchJson<LdapUser[]>(`${API_BASE_URL}/ldap/users${query}`);
+  },
+
+  deleteLdapUser: (id: string) => {
+    return fetchJson<LdapUser>(`${API_BASE_URL}/ldap/users/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Home Content
+  getHomeContent: () => {
+    return fetchJson<HomeContent>(`${API_BASE_URL}/home-content`);
+  },
+
+  updateHomeContent: (data: Partial<HomeContent>) => {
+    return fetchJson<HomeContent>(`${API_BASE_URL}/home-content`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
 };
+
+

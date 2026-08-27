@@ -55,7 +55,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onCancel }
             — Regional de —
           </div>
           <div className="text-sm uppercase font-extrabold tracking-wider text-white">
-            SÃO JOSÉ
+            SÃO JERÔNIMO
           </div>
 
           <div className="mt-3 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">

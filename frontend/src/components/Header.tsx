@@ -31,7 +31,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <div className="text-[10px] uppercase font-black tracking-widest text-slate-300 leading-none">
-                HOSPITAL REGIONAL SÃO JOSÉ
+                HOSPITAL REGIONAL SÃO JERÔNIMO
               </div>
               <div className="text-xs uppercase font-extrabold tracking-wider text-white leading-none mt-0.5">
                 Central da Associação

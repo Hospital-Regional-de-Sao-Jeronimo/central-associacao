@@ -55,3 +55,41 @@ model PartnerBenefit {
   @@map("partner_benefits")
 }
 
+model LdapUser {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  nomeCompleto String    @map("nome_completo")
+  email        String    @unique
+  telefone     String?
+  cpf          String    @unique
+  departamento String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  @@map("ldap_users")
+}
+
+model HomeContent {
+  id              String   @id @default("default-home-content")
+  heroBadge       String   @default("Associação dos Funcionários do HRSJ") @map("hero_badge")
+  heroTitle       String   @default("União, Valorização e Benefícios para os Servidores do HRSJ") @map("hero_title")
+  heroSubtitle    String   @default("Desde 1995, atuamos na integração, apoio social e busca contínua de vantagens exclusivas para os profissionais de saúde e colaboradores do Hospital Regional São José.") @map("hero_subtitle")
+  
+  foundationYear  String   @default("1995") @map("foundation_year")
+  foundationDate  String   @default("15 de Maio") @map("foundation_date")
+
+  historyBlocks   Json     @default("[{\"id\":\"block-1\",\"title\":\"Nossa História & Fundação\",\"content1\":\"A Associação dos Funcionários do Hospital Regional São José foi fundada em 15 de maio de 1995 a partir da iniciativa de uma comissão de servidores que buscava fortalecer a união da categoria e criar uma rede de apoio mútuo entre os profissionais da saúde.\",\"content2\":\"Ao longo de três décadas de história, a associação expandiu sua atuação, tornando-se referência na promoção de bem-estar, celebrações comunitárias e convênios na Grande Florianópolis.\"},{\"id\":\"block-2\",\"title\":\"Por que & Por quem fomos criados?\",\"content1\":\"Criada pelos próprios servidores do HRSJ (médicos, enfermeiros, técnicos, farmacêuticos, administrativos e equipe de apoio), a associação tem como missão cuidar de quem dedica a vida ao cuidado dos outros.\",\"content2\":\"Nosso objetivo é proporcionar benefícios financeiros reais (descontos no comércio, saúde e educação), carteirinha de identificação oficial de associado e eventos sociais de integração.\"}]") @map("history_blocks")
+
+  boardBadge      String   @default("• Diretoria Eleita Ativa") @map("board_badge")
+  boardTitle      String   @default("Gestão Atual (Biênio 2025 / 2027)") @map("board_title")
+  boardSubtitle   String   @default("Liderança e Transparência") @map("board_subtitle")
+  boardMembers    Json     @default("[{\"role\":\"Presidente\",\"fallbackName\":\"Dr. Roberto Carlos Medeiros\",\"fallbackSubtext\":\"Corpo Médico HRSJ\"},{\"role\":\"Vice-Presidente\",\"fallbackName\":\"Dra. Juliana Barbosa Santos\",\"fallbackSubtext\":\"Enfermagem Geral\"},{\"role\":\"Tesoureiro Geral\",\"fallbackName\":\"Marcelo Oliveira Silva\",\"fallbackSubtext\":\"Setor Administrativo\"},{\"role\":\"Secretária Geral\",\"fallbackName\":\"Ana Paula da Silva\",\"fallbackSubtext\":\"Recursos Humanos\"}]") @map("board_members")
+
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("home_content")
+}
+
+
+

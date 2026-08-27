@@ -33,16 +33,21 @@ export class AssociatesService {
       cardRetrievedAt = createDto.cardRetrievedAt ? new Date(createDto.cardRetrievedAt) : new Date();
     }
 
+    const birthDate = createDto.birthDate ? new Date(createDto.birthDate) : new Date('1990-01-01');
+    const admissionDate = createDto.admissionDate ? new Date(createDto.admissionDate) : new Date();
+    const associationDate = createDto.associationDate ? new Date(createDto.associationDate) : new Date();
+    const address = createDto.address || 'Hospital Regional São Jerônimo';
+
     return this.prisma.associate.create({
       data: {
         name: createDto.name,
         cpf: cleanedCpf,
         email: createDto.email,
         phone: createDto.phone || null,
-        birthDate: new Date(createDto.birthDate),
-        address: createDto.address,
-        admissionDate: new Date(createDto.admissionDate),
-        associationDate: new Date(createDto.associationDate),
+        birthDate,
+        address,
+        admissionDate,
+        associationDate,
         cardNumber: createDto.cardNumber || null,
         cardRetrieved: createDto.cardRetrieved ?? false,
         cardRetrievedAt,

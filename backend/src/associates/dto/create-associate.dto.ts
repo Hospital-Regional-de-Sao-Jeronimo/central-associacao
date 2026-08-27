@@ -17,21 +17,21 @@ export class CreateAssociateDto {
   @IsString()
   phone?: string;
 
-  @IsNotEmpty({ message: 'A data de nascimento é obrigatória.' })
+  @IsOptional()
   @IsDateString({}, { message: 'Data de nascimento inválida.' })
-  birthDate: string;
+  birthDate?: string;
 
-  @IsNotEmpty({ message: 'O endereço é obrigatório.' })
+  @IsOptional()
   @IsString()
-  address: string;
+  address?: string;
 
-  @IsNotEmpty({ message: 'A data de admissão é obrigatória.' })
+  @IsOptional()
   @IsDateString({}, { message: 'Data de admissão inválida.' })
-  admissionDate: string;
+  admissionDate?: string;
 
-  @IsNotEmpty({ message: 'A data de associação é obrigatória.' })
+  @IsOptional()
   @IsDateString({}, { message: 'Data de associação inválida.' })
-  associationDate: string;
+  associationDate?: string;
 
   @IsOptional()
   @IsString()

@@ -15,7 +15,7 @@ export class AuthService {
           name: 'Mateus Speress',
           email: 'admin@hrsj.sc.gov.br',
           role: 'ADMIN',
-          hospital: 'Hospital Regional São José',
+          hospital: 'Hospital Regional São Jerônimo',
         },
       };
     }
@@ -29,7 +29,7 @@ export class AuthService {
           name: email.split('@')[0].toUpperCase(),
           email,
           role: 'ADMIN',
-          hospital: 'Hospital Regional São José',
+          hospital: 'Hospital Regional São Jerônimo',
         },
       };
     }
