@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:16
@@ -13,7 +15,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
 
     ports:
-      - "${POSTGRES_PORT:-2345}:5432"
+      - "2345:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -23,16 +25,13 @@ services:
       context: ./backend
 
     container_name: central-associacao-api
+    restart: unless-stopped
 
     depends_on:
       - postgres
 
     ports:
       - "3000:3000"
-
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
 
     env_file:
       - path: .env
@@ -42,13 +41,12 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
 
-    command: sh -c "pnpm install && pnpm prisma generate && pnpm start"
-
   frontend:
     build:
       context: ./frontend
 
     container_name: central-associacao-web
+    restart: unless-stopped
 
     depends_on:
       - backend
@@ -56,17 +54,11 @@ services:
     ports:
       - "5173:5173"
 
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-
     env_file:
       - path: .env
         required: false
     environment:
       VITE_API_URL: ${VITE_API_URL:-/central-associacao-api}
-
-    command: sh -c "pnpm install && pnpm dev --host"
 
 volumes:
   postgres_data:
