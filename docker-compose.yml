@@ -42,7 +42,7 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
 
-    command: sh -c "pnpm prisma generate && pnpm start"
+    command: sh -c "pnpm install && pnpm prisma generate && pnpm start"
 
   frontend:
     build:
@@ -66,7 +66,7 @@ services:
     environment:
       VITE_API_URL: ${VITE_API_URL:-/central-associacao-api}
 
-    command: pnpm dev --host
+    command: sh -c "pnpm install && pnpm dev --host"
 
 volumes:
   postgres_data:
