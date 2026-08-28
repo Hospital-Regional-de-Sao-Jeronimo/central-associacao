@@ -41,9 +41,10 @@ git pull origin main 2>/dev/null || true
 echo "🐳 2/4 Reconstruindo e iniciando containers Docker..."
 $DOCKER_COMPOSE up -d --build --remove-orphans
 
-# 3. Aplicar migrações do banco de dados PostgreSQL via Prisma
-echo "🗄️  3/4 Aplicando migrações no banco de dados..."
-$DOCKER_COMPOSE exec -T backend pnpm prisma migrate deploy || true
+# 3. Sincronizar esquema do banco de dados PostgreSQL e rodar seed do Admin
+echo "🗄️  3/4 Sincronizando banco de dados e seed do Admin..."
+$DOCKER_COMPOSE exec -T backend pnpm prisma db push --skip-generate || true
+$DOCKER_COMPOSE exec -T backend pnpm prisma db seed || true
 
 # 4. Limpar imagens Docker antigas/não utilizadas para economizar disco
 echo "🧹 4/4 Limpando imagens docker antigas..."
