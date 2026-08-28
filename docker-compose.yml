@@ -4,13 +4,15 @@ services:
     container_name: central-associacao-db
     restart: unless-stopped
 
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: central_associacao
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-central_associacao}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
 
     ports:
-      - "2345:5432"
+      - "${POSTGRES_PORT:-2345}:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -30,8 +32,12 @@ services:
     volumes:
       - ./backend:/app
 
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/central_associacao
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-central_associacao}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
 
     command: pnpm start:dev
 
@@ -50,8 +56,10 @@ services:
     volumes:
       - ./frontend:/app
 
+    env_file:
+      - .env
     environment:
-      VITE_API_URL: http://localhost:3000
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
 
     command: pnpm dev --host
 

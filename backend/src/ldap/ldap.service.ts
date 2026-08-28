@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterLdapUserDto } from './dto/register-ldap-user.dto';
 
@@ -24,33 +28,33 @@ export class LdapService {
     return cpf.replace(/\D/g, '');
   }
 
-  // Mock de fallback para desenvolvimento offline se a API local não estiver acessível
+  // Mock fictício para desenvolvimento offline local (sem dados reais ou sensíveis)
   private mockLdapUsers: LdapUserSearchResult[] = [
     {
-      username: 'mateus.lopes',
-      nome_completo: 'Mateus Peres Lopes',
-      email: 'mateus.lopes@hsjeronimo.com.br',
-      telefone: '51995365718',
-      cpf: '05144512038',
+      username: 'usuario.teste1',
+      nome_completo: 'Usuário Teste Exemplo Um',
+      email: 'usuario.teste1@exemplo.com.br',
+      telefone: '48990000001',
+      cpf: '00000000001',
       ativo: true,
       departamento: 'TI',
-      cargo: 'Desenvolvedor',
-      userPrincipalName: 'mateus.lopes@hsjeronimo.com.br',
-      dn: 'CN=Mateus Peres Lopes,OU=tecnologia.da.informacao.hrsj,OU=HRSJ,DC=redeafpergs,DC=local',
-      grupos: ['g.scanner.hrsj', 'g.acesso.remoto', 'Administrators'],
+      cargo: 'Analista de Testes',
+      userPrincipalName: 'usuario.teste1@exemplo.com.br',
+      dn: 'CN=Usuario Teste 1,OU=TI,DC=exemplo,DC=local',
+      grupos: ['g.teste'],
     },
     {
-      username: 'carlos.oliveira',
-      nome_completo: 'Carlos Eduardo Oliveira',
-      email: 'carlos.oliveira@hsjeronimo.com.br',
-      telefone: '51987654321',
-      cpf: '98765432100',
+      username: 'usuario.teste2',
+      nome_completo: 'Usuário Teste Exemplo Dois',
+      email: 'usuario.teste2@exemplo.com.br',
+      telefone: '48990000002',
+      cpf: '00000000002',
       ativo: true,
       departamento: 'Administração',
-      cargo: 'Analista de Recursos Humanos',
-      userPrincipalName: 'carlos.oliveira@hsjeronimo.com.br',
-      dn: 'CN=Carlos Eduardo Oliveira,OU=rh.hrsj,OU=HRSJ,DC=redeafpergs,DC=local',
-      grupos: ['g.rh.hrsj', 'g.acesso.remoto'],
+      cargo: 'Assistente',
+      userPrincipalName: 'usuario.teste2@exemplo.com.br',
+      dn: 'CN=Usuario Teste 2,OU=Adm,DC=exemplo,DC=local',
+      grupos: ['g.teste'],
     },
   ];
 
@@ -63,29 +67,19 @@ export class LdapService {
     const cleanQuery = this.cleanCpf(trimmedQuery);
     const lowerQuery = trimmedQuery.toLowerCase();
 
-    // URLs possíveis da API Hub LDAP (contemplando Docker, localhost e IP do host)
-    const baseUrls = [
-      process.env.LDAP_API_URL,
-      'http://172.17.0.1:8080/api/v1/ldap/usuarios',
-      'http://host.docker.internal:8080/api/v1/ldap/usuarios',
-      'http://localhost:8080/api/v1/ldap/usuarios',
-    ].filter(Boolean) as string[];
-
-    const apiToken = process.env.LDAP_API_TOKEN || 'ak_producao_8aae0065_testldapkey12345678901234567890';
+    const baseUrls = [process.env.LDAP_API_URL].filter(Boolean) as string[];
+    const apiToken = process.env.LDAP_API_TOKEN || '';
 
     let fetchedUsers: LdapUserSearchResult[] = [];
 
-    // Tentar consultar a API Hub
     for (const baseUrl of baseUrls) {
       try {
         const queryParamsList: string[] = [];
 
-        // Se for um CPF limpo válido
         if (cleanQuery && cleanQuery.length >= 8) {
           queryParamsList.push(`cpf=${encodeURIComponent(cleanQuery)}`);
         }
 
-        // Se for nome ou username
         queryParamsList.push(`q=${encodeURIComponent(trimmedQuery)}`);
 
         if (!trimmedQuery.includes(' ') && trimmedQuery.length > 2) {
@@ -125,25 +119,31 @@ export class LdapService {
             }
           }
           fetchedUsers = Array.from(map.values());
-          break; // Conseguiu resultados da API Hub!
+          break;
         }
-      } catch (err) {
-        // Tenta a próxima URL
-      }
+      } catch (err) {}
     }
 
     // Se a chamada HTTP não retornar resultados ou estiver offline, usa a busca local/mock
     if (fetchedUsers.length === 0) {
       fetchedUsers = this.mockLdapUsers.filter((user) => {
-        const matchesName = user.nome_completo.toLowerCase().includes(lowerQuery);
-        const matchesUsername = user.username.toLowerCase().includes(lowerQuery);
-        const matchesEmail = user.email ? user.email.toLowerCase().includes(lowerQuery) : false;
-        const matchesCpf = cleanQuery ? this.cleanCpf(user.cpf).includes(cleanQuery) : user.cpf.includes(lowerQuery);
+        const matchesName = user.nome_completo
+          .toLowerCase()
+          .includes(lowerQuery);
+        const matchesUsername = user.username
+          .toLowerCase()
+          .includes(lowerQuery);
+        const matchesEmail = user.email
+          ? user.email.toLowerCase().includes(lowerQuery)
+          : false;
+        const matchesCpf = cleanQuery
+          ? this.cleanCpf(user.cpf).includes(cleanQuery)
+          : user.cpf.includes(lowerQuery);
         return matchesName || matchesUsername || matchesEmail || matchesCpf;
       });
     }
 
-    // REGRA CRÍTICA: Somente usuários com ativo: true devem aparecer!
+    // REGRA CRÍTICA: Somente usuários com ativo: true devem aparecer
     return fetchedUsers.filter((user) => Boolean(user.ativo) === true);
   }
 
@@ -154,21 +154,27 @@ export class LdapService {
       where: { cpf: cleanedCpf, deletedAt: null },
     });
     if (existingCpf) {
-      throw new BadRequestException('Usuário LDAP com este CPF já está cadastrado.');
+      throw new BadRequestException(
+        'Usuário LDAP com este CPF já está cadastrado.',
+      );
     }
 
     const existingUsername = await this.prisma.ldapUser.findFirst({
       where: { username: dto.username, deletedAt: null },
     });
     if (existingUsername) {
-      throw new BadRequestException('Usuário LDAP com este username já está cadastrado.');
+      throw new BadRequestException(
+        'Usuário LDAP com este username já está cadastrado.',
+      );
     }
 
     const existingEmail = await this.prisma.ldapUser.findFirst({
       where: { email: dto.email, deletedAt: null },
     });
     if (existingEmail) {
-      throw new BadRequestException('Usuário LDAP com este e-mail já está cadastrado.');
+      throw new BadRequestException(
+        'Usuário LDAP com este e-mail já está cadastrado.',
+      );
     }
 
     return this.prisma.ldapUser.create({
@@ -212,7 +218,9 @@ export class LdapService {
     });
 
     if (!user) {
-      throw new NotFoundException(`Usuário LDAP cadastrado com ID "${id}" não foi encontrado.`);
+      throw new NotFoundException(
+        `Usuário LDAP cadastrado com ID "${id}" não foi encontrado.`,
+      );
     }
 
     return this.prisma.ldapUser.update({

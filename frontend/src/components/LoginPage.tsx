@@ -30,10 +30,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onCancel }
     }
   };
 
-  const handleFillDemo = () => {
-    setEmail('admin@hrsj.sc.gov.br');
-    setPassword('123456');
-  };
 
   return (
     <div className="min-h-screen bg-[#0e1a2e] flex flex-col items-center justify-center p-4">
@@ -124,22 +120,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onCancel }
               </>
             )}
           </button>
-
-          {/* Demo Helper Box */}
-          <div className="pt-2">
-            <div className="p-3 bg-slate-800/80 rounded-2xl border border-slate-700/70 text-center space-y-1.5">
-              <p className="text-[11px] text-slate-400 font-medium">
-                Precisa testar o sistema?
-              </p>
-              <button
-                type="button"
-                onClick={handleFillDemo}
-                className="text-xs font-bold text-blue-400 hover:text-blue-300 underline cursor-pointer"
-              >
-                Preencher credenciais de teste (Admin)
-              </button>
-            </div>
-          </div>
 
           {/* Cancel & Back Link */}
           <div className="text-center pt-2">

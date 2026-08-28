@@ -1,8 +1,24 @@
-node_modules
-.pnpm-store
-dist
+# Environment variables (Secrets)
 .env
-.env.*
+.env.local
+.env.production
+*.env
+!.env.example
 
-/generated/prisma
+# Dependencies & Build artifacts
+node_modules
+dist
+build
+.pnpm-store
 
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
