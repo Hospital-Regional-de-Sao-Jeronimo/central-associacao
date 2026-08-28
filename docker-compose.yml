@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16
@@ -42,10 +40,16 @@ services:
     env_file:
       - path: .env
         required: false
+      - path: backend/.env
+        required: false
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-central_associacao}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      LDAP_API_URL: ${LDAP_API_URL:-https://hub.hsjeronimo.com.br/api/v1/ldap/usuarios}
+      LDAP_API_TOKEN: ${LDAP_API_TOKEN:-${APP_KEY_PROD}}
+      APP_KEY_PROD: ${APP_KEY_PROD}
+      APP_KEY_TEST: ${APP_KEY_TEST}
 
   frontend:
     build:

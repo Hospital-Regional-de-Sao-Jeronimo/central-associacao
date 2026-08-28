@@ -19,13 +19,21 @@ const API_BASE_URL = getApiBaseUrl();
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const token = localStorage.getItem('hrsj_token');
+  const headers: Record<string, string> = {};
+  
+  if (options?.body) {
+    headers['Content-Type'] = 'application/json';
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(url, {
+    ...options,
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
       ...options?.headers,
     },
-    ...options,
   });
 
   if (!response.ok) {

@@ -28,33 +28,33 @@ export class LdapService {
     return cpf.replace(/\D/g, '');
   }
 
-  // Mock fictício para desenvolvimento offline local (sem dados reais ou sensíveis)
+  // Mock de fallback para desenvolvimento offline se a API local não estiver acessível
   private mockLdapUsers: LdapUserSearchResult[] = [
     {
-      username: 'usuario.teste1',
-      nome_completo: 'Usuário Teste Exemplo Um',
-      email: 'usuario.teste1@exemplo.com.br',
-      telefone: '48990000001',
-      cpf: '00000000001',
+      username: 'mateus.lopes',
+      nome_completo: 'Mateus Peres Lopes',
+      email: 'mateus.lopes@hsjeronimo.com.br',
+      telefone: '51995365718',
+      cpf: '05144512038',
       ativo: true,
       departamento: 'TI',
-      cargo: 'Analista de Testes',
-      userPrincipalName: 'usuario.teste1@exemplo.com.br',
-      dn: 'CN=Usuario Teste 1,OU=TI,DC=exemplo,DC=local',
-      grupos: ['g.teste'],
+      cargo: 'Desenvolvedor',
+      userPrincipalName: 'mateus.lopes@hsjeronimo.com.br',
+      dn: 'CN=Mateus Peres Lopes,OU=tecnologia.da.informacao.hrsj,OU=HRSJ,DC=redeafpergs,DC=local',
+      grupos: ['g.scanner.hrsj', 'g.acesso.remoto', 'Administrators'],
     },
     {
-      username: 'usuario.teste2',
-      nome_completo: 'Usuário Teste Exemplo Dois',
-      email: 'usuario.teste2@exemplo.com.br',
-      telefone: '48990000002',
-      cpf: '00000000002',
+      username: 'carlos.oliveira',
+      nome_completo: 'Carlos Eduardo Oliveira',
+      email: 'carlos.oliveira@hsjeronimo.com.br',
+      telefone: '51987654321',
+      cpf: '98765432100',
       ativo: true,
       departamento: 'Administração',
-      cargo: 'Assistente',
-      userPrincipalName: 'usuario.teste2@exemplo.com.br',
-      dn: 'CN=Usuario Teste 2,OU=Adm,DC=exemplo,DC=local',
-      grupos: ['g.teste'],
+      cargo: 'Analista de Recursos Humanos',
+      userPrincipalName: 'carlos.oliveira@hsjeronimo.com.br',
+      dn: 'CN=Carlos Eduardo Oliveira,OU=rh.hrsj,OU=HRSJ,DC=redeafpergs,DC=local',
+      grupos: ['g.rh.hrsj', 'g.acesso.remoto'],
     },
   ];
 
@@ -67,19 +67,31 @@ export class LdapService {
     const cleanQuery = this.cleanCpf(trimmedQuery);
     const lowerQuery = trimmedQuery.toLowerCase();
 
-    const baseUrls = [process.env.LDAP_API_URL].filter(Boolean) as string[];
-    const apiToken = process.env.LDAP_API_TOKEN || '';
+    // URLs possíveis da API Hub LDAP (contemplando Docker, localhost e IP do host)
+    const baseUrls = [
+      process.env.LDAP_API_URL,
+      // 'http://172.17.0.1:8080/api/v1/ldap/usuarios',
+      // 'http://host.docker.internal:8080/api/v1/ldap/usuarios',
+      // 'http://localhost:8080/api/v1/ldap/usuarios',
+    ].filter(Boolean) as string[];
+
+    const apiToken =
+      process.env.LDAP_API_TOKEN ||
+      'ak_producao_8aae0065_testldapkey12345678901234567890';
 
     let fetchedUsers: LdapUserSearchResult[] = [];
 
+    // Tentar consultar a API Hub
     for (const baseUrl of baseUrls) {
       try {
         const queryParamsList: string[] = [];
 
+        // Se for um CPF limpo válido
         if (cleanQuery && cleanQuery.length >= 8) {
           queryParamsList.push(`cpf=${encodeURIComponent(cleanQuery)}`);
         }
 
+        // Se for nome ou username
         queryParamsList.push(`q=${encodeURIComponent(trimmedQuery)}`);
 
         if (!trimmedQuery.includes(' ') && trimmedQuery.length > 2) {
@@ -119,9 +131,11 @@ export class LdapService {
             }
           }
           fetchedUsers = Array.from(map.values());
-          break;
+          break; // Conseguiu resultados da API Hub!
         }
-      } catch (err) {}
+      } catch (err) {
+        // Tenta a próxima URL
+      }
     }
 
     // Se a chamada HTTP não retornar resultados ou estiver offline, usa a busca local/mock
@@ -143,7 +157,7 @@ export class LdapService {
       });
     }
 
-    // REGRA CRÍTICA: Somente usuários com ativo: true devem aparecer
+    // REGRA CRÍTICA: Somente usuários com ativo: true devem aparecer!
     return fetchedUsers.filter((user) => Boolean(user.ativo) === true);
   }
 
