@@ -64,7 +64,7 @@ services:
       - path: .env
         required: false
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+      VITE_API_URL: ${VITE_API_URL:-/central-associacao-api}
 
     command: pnpm dev --host
 

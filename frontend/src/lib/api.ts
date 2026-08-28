@@ -1,6 +1,21 @@
 import type { Associate, BenefitCategory, PartnerBenefit, LdapUserSearchResult, LdapUser, RegisterLdapUserPayload, HomeContent } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && envUrl !== 'http://localhost:3000') {
+    return envUrl;
+  }
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1'
+  ) {
+    return '/central-associacao-api';
+  }
+  return envUrl || 'http://localhost:3000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const token = localStorage.getItem('hrsj_token');
