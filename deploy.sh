@@ -50,7 +50,7 @@ echo "✅ PostgreSQL pronto para conexões!"
 
 # 3. Sincronizar esquema do banco de dados PostgreSQL e rodar seed do Admin
 echo "🗄️  3/4 Sincronizando banco de dados e seed do Admin..."
-$DOCKER_COMPOSE exec -T backend pnpm prisma db push --skip-generate
+$DOCKER_COMPOSE exec -T backend pnpm prisma db push
 $DOCKER_COMPOSE exec -T backend pnpm prisma db seed
 
 # 4. Limpar imagens Docker antigas/não utilizadas para economizar disco
