@@ -5,6 +5,7 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/central-associacao/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
