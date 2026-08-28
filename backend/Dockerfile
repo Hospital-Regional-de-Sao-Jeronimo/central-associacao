@@ -5,9 +5,9 @@ WORKDIR /app
 RUN corepack enable
 RUN corepack prepare pnpm@10.17.1 --activate
 
-COPY package.json pnpm-lock.yaml ./
+COPY .npmrc package.json pnpm-lock.yaml ./
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 COPY . .
 
@@ -16,4 +16,4 @@ RUN pnpm build
 
 EXPOSE 3000
 
-CMD ["pnpm", "start:prod"]
+CMD ["pnpm", "run", "start"]
