@@ -5,6 +5,8 @@ import { ValidationPipe } from '@nestjs/common';
 
 import { json, urlencoded } from 'express';
 
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -17,6 +19,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     credentials: true,
   });
+
+  app.useGlobalFilters(new PrismaExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -13,20 +13,7 @@ export class AssociatesService {
 
   async create(createDto: CreateAssociateDto) {
     const cleanedCpf = this.cleanCpf(createDto.cpf);
-
-    const existingCpf = await this.prisma.associate.findFirst({
-      where: { cpf: cleanedCpf, deletedAt: null },
-    });
-    if (existingCpf) {
-      throw new BadRequestException('Já existe um associado cadastrado com este CPF.');
-    }
-
-    const existingEmail = await this.prisma.associate.findFirst({
-      where: { email: createDto.email, deletedAt: null },
-    });
-    if (existingEmail) {
-      throw new BadRequestException('Já existe um associado cadastrado com este e-mail.');
-    }
+    const cardNumber = createDto.cardNumber?.trim() || null;
 
     let cardRetrievedAt: Date | null = null;
     if (createDto.cardRetrieved) {
@@ -38,6 +25,68 @@ export class AssociatesService {
     const associationDate = createDto.associationDate ? new Date(createDto.associationDate) : new Date();
     const address = createDto.address || 'Hospital Regional São Jerônimo';
 
+    // Check CPF regardless of soft-delete status (DB UNIQUE index applies to all rows)
+    const existingCpf = await this.prisma.associate.findFirst({
+      where: { cpf: cleanedCpf },
+    });
+    if (existingCpf) {
+      if (existingCpf.deletedAt) {
+        return this.prisma.associate.update({
+          where: { id: existingCpf.id },
+          data: {
+            name: createDto.name,
+            email: createDto.email,
+            phone: createDto.phone || null,
+            birthDate,
+            address,
+            admissionDate,
+            associationDate,
+            cardNumber,
+            cardRetrieved: createDto.cardRetrieved ?? false,
+            cardRetrievedAt,
+            active: createDto.active ?? true,
+            deletedAt: null,
+          },
+        });
+      }
+      throw new BadRequestException('Já existe um associado cadastrado com este CPF.');
+    }
+
+    const existingEmail = await this.prisma.associate.findFirst({
+      where: { email: createDto.email },
+    });
+    if (existingEmail) {
+      if (existingEmail.deletedAt) {
+        return this.prisma.associate.update({
+          where: { id: existingEmail.id },
+          data: {
+            name: createDto.name,
+            cpf: cleanedCpf,
+            phone: createDto.phone || null,
+            birthDate,
+            address,
+            admissionDate,
+            associationDate,
+            cardNumber,
+            cardRetrieved: createDto.cardRetrieved ?? false,
+            cardRetrievedAt,
+            active: createDto.active ?? true,
+            deletedAt: null,
+          },
+        });
+      }
+      throw new BadRequestException('Já existe um associado cadastrado com este e-mail.');
+    }
+
+    if (cardNumber) {
+      const existingCard = await this.prisma.associate.findFirst({
+        where: { cardNumber },
+      });
+      if (existingCard && !existingCard.deletedAt) {
+        throw new BadRequestException('Já existe um associado cadastrado com este número de carteirinha.');
+      }
+    }
+
     return this.prisma.associate.create({
       data: {
         name: createDto.name,
@@ -48,7 +97,7 @@ export class AssociatesService {
         address,
         admissionDate,
         associationDate,
-        cardNumber: createDto.cardNumber || null,
+        cardNumber,
         cardRetrieved: createDto.cardRetrieved ?? false,
         cardRetrievedAt,
         active: createDto.active ?? true,
@@ -105,7 +154,7 @@ export class AssociatesService {
     if (updateDto.cpf) {
       data.cpf = this.cleanCpf(updateDto.cpf);
       const existingCpf = await this.prisma.associate.findFirst({
-        where: { cpf: data.cpf, id: { not: id }, deletedAt: null },
+        where: { cpf: data.cpf, id: { not: id } },
       });
       if (existingCpf) {
         throw new BadRequestException('Outro associado já utiliza este CPF.');
@@ -114,10 +163,22 @@ export class AssociatesService {
 
     if (updateDto.email) {
       const existingEmail = await this.prisma.associate.findFirst({
-        where: { email: updateDto.email, id: { not: id }, deletedAt: null },
+        where: { email: updateDto.email, id: { not: id } },
       });
       if (existingEmail) {
         throw new BadRequestException('Outro associado já utiliza este e-mail.');
+      }
+    }
+
+    if (updateDto.cardNumber !== undefined) {
+      data.cardNumber = updateDto.cardNumber?.trim() || null;
+      if (data.cardNumber) {
+        const existingCard = await this.prisma.associate.findFirst({
+          where: { cardNumber: data.cardNumber, id: { not: id } },
+        });
+        if (existingCard) {
+          throw new BadRequestException('Outro associado já utiliza este número de carteirinha.');
+        }
       }
     }
 

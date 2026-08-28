@@ -165,30 +165,63 @@ export class LdapService {
     const cleanedCpf = this.cleanCpf(dto.cpf);
 
     const existingCpf = await this.prisma.ldapUser.findFirst({
-      where: { cpf: cleanedCpf, deletedAt: null },
+      where: { cpf: cleanedCpf },
     });
     if (existingCpf) {
-      throw new BadRequestException(
-        'Usuário LDAP com este CPF já está cadastrado.',
-      );
+      if (existingCpf.deletedAt) {
+        return this.prisma.ldapUser.update({
+          where: { id: existingCpf.id },
+          data: {
+            username: dto.username,
+            nomeCompleto: dto.nomeCompleto,
+            email: dto.email,
+            telefone: dto.telefone || null,
+            departamento: dto.departamento || null,
+            deletedAt: null,
+          },
+        });
+      }
+      throw new BadRequestException('Usuário LDAP com este CPF já está cadastrado.');
     }
 
     const existingUsername = await this.prisma.ldapUser.findFirst({
-      where: { username: dto.username, deletedAt: null },
+      where: { username: dto.username },
     });
     if (existingUsername) {
-      throw new BadRequestException(
-        'Usuário LDAP com este username já está cadastrado.',
-      );
+      if (existingUsername.deletedAt) {
+        return this.prisma.ldapUser.update({
+          where: { id: existingUsername.id },
+          data: {
+            nomeCompleto: dto.nomeCompleto,
+            email: dto.email,
+            telefone: dto.telefone || null,
+            cpf: cleanedCpf,
+            departamento: dto.departamento || null,
+            deletedAt: null,
+          },
+        });
+      }
+      throw new BadRequestException('Usuário LDAP com este username já está cadastrado.');
     }
 
     const existingEmail = await this.prisma.ldapUser.findFirst({
-      where: { email: dto.email, deletedAt: null },
+      where: { email: dto.email },
     });
     if (existingEmail) {
-      throw new BadRequestException(
-        'Usuário LDAP com este e-mail já está cadastrado.',
-      );
+      if (existingEmail.deletedAt) {
+        return this.prisma.ldapUser.update({
+          where: { id: existingEmail.id },
+          data: {
+            username: dto.username,
+            nomeCompleto: dto.nomeCompleto,
+            telefone: dto.telefone || null,
+            cpf: cleanedCpf,
+            departamento: dto.departamento || null,
+            deletedAt: null,
+          },
+        });
+      }
+      throw new BadRequestException('Usuário LDAP com este e-mail já está cadastrado.');
     }
 
     return this.prisma.ldapUser.create({
