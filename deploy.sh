@@ -41,10 +41,17 @@ git pull origin main 2>/dev/null || true
 echo "🐳 2/4 Reconstruindo e iniciando containers Docker..."
 $DOCKER_COMPOSE up -d --build --remove-orphans
 
+# Aguardar o banco de dados estar 100% pronto para aceitar conexões
+echo "⏳ Aguardando PostgreSQL inicializar..."
+until $DOCKER_COMPOSE exec -T postgres pg_isready -U ${POSTGRES_USER:-postgres} &>/dev/null; do
+  sleep 1
+done
+echo "✅ PostgreSQL pronto para conexões!"
+
 # 3. Sincronizar esquema do banco de dados PostgreSQL e rodar seed do Admin
 echo "🗄️  3/4 Sincronizando banco de dados e seed do Admin..."
-$DOCKER_COMPOSE exec -T backend pnpm prisma db push --skip-generate || true
-$DOCKER_COMPOSE exec -T backend pnpm prisma db seed || true
+$DOCKER_COMPOSE exec -T backend pnpm prisma db push --skip-generate
+$DOCKER_COMPOSE exec -T backend pnpm prisma db seed
 
 # 4. Limpar imagens Docker antigas/não utilizadas para economizar disco
 echo "🧹 4/4 Limpando imagens docker antigas..."
