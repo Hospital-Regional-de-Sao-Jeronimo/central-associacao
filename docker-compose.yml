@@ -5,7 +5,8 @@ services:
     restart: unless-stopped
 
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-central_associacao}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -33,7 +34,8 @@ services:
       - ./backend:/app
 
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-central_associacao}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
@@ -57,7 +59,8 @@ services:
       - ./frontend:/app
 
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
 

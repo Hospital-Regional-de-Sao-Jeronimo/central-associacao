@@ -15,10 +15,21 @@ fi
 
 # Ensure .env exists in current working dir for Docker
 if [ ! -f .env ]; then
-  if [ -f ~/Desenvolvimento/central-associacao/.env ]; then
-    cp ~/Desenvolvimento/central-associacao/.env .env
-  elif [ -f ~/.env ]; then
-    cp ~/.env .env
+  for env_path in \
+    ~/Desenvolvimento/central-associacao/.env \
+    /home/pablosantos/Desenvolvimento/central-associacao/.env \
+    /home/mateus/Desenvolvimento/central-associacao/.env \
+    ~/.env \
+    ../.env
+  do
+    if [ -f "$env_path" ]; then
+      cp "$env_path" .env
+      break
+    fi
+  done
+
+  if [ ! -f .env ] && [ -f .env.example ]; then
+    cp .env.example .env
   fi
 fi
 
