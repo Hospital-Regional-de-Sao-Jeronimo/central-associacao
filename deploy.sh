@@ -49,6 +49,9 @@ $DOCKER_COMPOSE exec -T backend pnpm prisma migrate deploy || true
 echo "🧹 4/4 Limpando imagens docker antigas..."
 docker image prune -f || true
 
+# Ensure workspace permissions remain accessible to runner user
+chown -R $USER:$USER . 2>/dev/null || true
+
 echo "=================================================="
 echo "✅ [DEPLOY OK] Aplicação atualizada com sucesso!"
 echo "=================================================="
