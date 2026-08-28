@@ -7,6 +7,9 @@ import path from 'path'
 export default defineConfig({
   base: '/central-associacao/',
   plugins: [react(), tailwindcss()],
+  server: {
+    allowedHosts: true,
+  },
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
