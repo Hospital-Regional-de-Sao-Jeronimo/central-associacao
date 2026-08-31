@@ -181,7 +181,9 @@ export class LdapService {
           },
         });
       }
-      throw new BadRequestException('Usuário LDAP com este CPF já está cadastrado.');
+      throw new BadRequestException(
+        'Usuário LDAP com este CPF já está cadastrado.',
+      );
     }
 
     const existingUsername = await this.prisma.ldapUser.findFirst({
@@ -201,7 +203,9 @@ export class LdapService {
           },
         });
       }
-      throw new BadRequestException('Usuário LDAP com este username já está cadastrado.');
+      throw new BadRequestException(
+        'Usuário LDAP com este username já está cadastrado.',
+      );
     }
 
     const existingEmail = await this.prisma.ldapUser.findFirst({
@@ -221,7 +225,9 @@ export class LdapService {
           },
         });
       }
-      throw new BadRequestException('Usuário LDAP com este e-mail já está cadastrado.');
+      throw new BadRequestException(
+        'Usuário LDAP com este e-mail já está cadastrado.',
+      );
     }
 
     return this.prisma.ldapUser.create({
