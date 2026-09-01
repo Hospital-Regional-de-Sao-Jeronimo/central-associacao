@@ -5,13 +5,13 @@ export class CreateAssociateDto {
   @IsString()
   name: string;
 
-  @IsNotEmpty({ message: 'O CPF é obrigatório.' })
+  @IsOptional()
   @IsString()
-  cpf: string;
+  cpf?: string;
 
-  @IsNotEmpty({ message: 'O e-mail é obrigatório.' })
-  @IsEmail({}, { message: 'E-mail em formato inválido.' })
-  email: string;
+  @IsOptional()
+  @IsString()
+  email?: string;
 
   @IsOptional()
   @IsString()

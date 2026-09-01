@@ -145,11 +145,10 @@ export const AssociateModal: React.FC<AssociateModalProps> = ({
               {/* CPF */}
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  CPF *
+                  CPF
                 </label>
                 <input
                   type="text"
-                  required
                   value={formData.cpf}
                   onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none text-slate-900 dark:text-white transition font-mono font-medium"
@@ -160,11 +159,10 @@ export const AssociateModal: React.FC<AssociateModalProps> = ({
               {/* Data Nascimento */}
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Data de Nascimento *
+                  Data de Nascimento
                 </label>
                 <input
                   type="date"
-                  required
                   value={formData.birthDate}
                   onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none text-slate-900 dark:text-white transition font-medium"
@@ -174,13 +172,12 @@ export const AssociateModal: React.FC<AssociateModalProps> = ({
               {/* E-mail */}
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  E-mail *
+                  E-mail
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="email"
-                    required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none text-slate-900 dark:text-white transition font-medium"
@@ -209,17 +206,16 @@ export const AssociateModal: React.FC<AssociateModalProps> = ({
               {/* Endereço */}
               <div className="md:col-span-2">
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Endereço Completo *
+                  Endereço / Setor
                 </label>
                 <div className="relative">
                   <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    required
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none text-slate-900 dark:text-white transition font-medium"
-                    placeholder="Rua, Número, Bairro, Cidade - UF"
+                    placeholder="Setor ou Endereço"
                   />
                 </div>
               </div>
@@ -237,11 +233,10 @@ export const AssociateModal: React.FC<AssociateModalProps> = ({
               {/* Data Admissão HRSJ */}
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Data Admissão (HRSJ) *
+                  Data Admissão (HRSJ)
                 </label>
                 <input
                   type="date"
-                  required
                   value={formData.admissionDate}
                   onChange={(e) => setFormData({ ...formData, admissionDate: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none text-slate-900 dark:text-white transition font-medium"
@@ -251,11 +246,10 @@ export const AssociateModal: React.FC<AssociateModalProps> = ({
               {/* Data Entrada Associação */}
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Data Entrada na Associação *
+                  Data Entrada na Associação
                 </label>
                 <input
                   type="date"
-                  required
                   value={formData.associationDate}
                   onChange={(e) => setFormData({ ...formData, associationDate: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none text-slate-900 dark:text-white transition font-medium"

@@ -19,13 +19,13 @@ enum BenefitCategory {
 model Associate {
   id              String    @id @default(uuid())
   name            String
-  cpf             String    @unique
-  email           String    @unique
+  cpf             String?   @unique
+  email           String?   @unique
   phone           String?
-  birthDate       DateTime  @map("birth_date")
-  address         String
-  admissionDate   DateTime  @map("admission_date")
-  associationDate DateTime  @map("association_date")
+  birthDate       DateTime? @map("birth_date")
+  address         String?
+  admissionDate   DateTime? @map("admission_date")
+  associationDate DateTime? @map("association_date")
   cardNumber      String?   @unique @map("card_number")
   cardRetrieved   Boolean   @default(false) @map("card_retrieved")
   cardRetrievedAt DateTime? @map("card_retrieved_at")

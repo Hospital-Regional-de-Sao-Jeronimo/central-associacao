@@ -41,7 +41,8 @@ export class AssociatesService implements OnModuleInit {
   }
 
   async create(createDto: CreateAssociateDto) {
-    const cleanedCpf = this.cleanCpf(createDto.cpf);
+    const cleanedCpf = createDto.cpf && createDto.cpf.trim() ? this.cleanCpf(createDto.cpf) : null;
+    const emailClean = createDto.email && createDto.email.trim() ? createDto.email.toLowerCase().trim() : null;
     const cardNumber = createDto.cardNumber?.trim() || null;
 
     let cardRetrievedAt: Date | null = null;
@@ -49,64 +50,71 @@ export class AssociatesService implements OnModuleInit {
       cardRetrievedAt = createDto.cardRetrievedAt ? new Date(createDto.cardRetrievedAt) : new Date();
     }
 
-    const birthDate = createDto.birthDate ? new Date(createDto.birthDate) : new Date('1990-01-01');
-    const admissionDate = createDto.admissionDate ? new Date(createDto.admissionDate) : new Date();
-    const associationDate = createDto.associationDate ? new Date(createDto.associationDate) : new Date();
+    const birthDate = createDto.birthDate ? new Date(createDto.birthDate) : null;
+    const admissionDate = createDto.admissionDate ? new Date(createDto.admissionDate) : null;
+    const associationDate = createDto.associationDate ? new Date(createDto.associationDate) : null;
     const address = createDto.address
-      ? `Departamento: ${normalizeDepartmentName(createDto.address)}`
-      : 'Hospital Regional São Jerônimo';
+      ? createDto.address.startsWith('Departamento: ')
+        ? createDto.address
+        : `Departamento: ${normalizeDepartmentName(createDto.address)}`
+      : null;
 
-    // Check CPF regardless of soft-delete status (DB UNIQUE index applies to all rows)
-    const existingCpf = await this.prisma.associate.findFirst({
-      where: { cpf: cleanedCpf },
-    });
-    if (existingCpf) {
-      if (existingCpf.deletedAt) {
-        return this.prisma.associate.update({
-          where: { id: existingCpf.id },
-          data: {
-            name: createDto.name,
-            email: createDto.email.toLowerCase().trim(),
-            phone: createDto.phone || null,
-            birthDate,
-            address,
-            admissionDate,
-            associationDate,
-            cardNumber,
-            cardRetrieved: createDto.cardRetrieved ?? false,
-            cardRetrievedAt,
-            active: createDto.active ?? true,
-            deletedAt: null,
-          },
-        });
+    // Check CPF duplicate if provided
+    if (cleanedCpf) {
+      const existingCpf = await this.prisma.associate.findFirst({
+        where: { cpf: cleanedCpf },
+      });
+      if (existingCpf) {
+        if (existingCpf.deletedAt) {
+          return this.prisma.associate.update({
+            where: { id: existingCpf.id },
+            data: {
+              name: createDto.name,
+              email: emailClean,
+              phone: createDto.phone || null,
+              birthDate,
+              address,
+              admissionDate,
+              associationDate,
+              cardNumber,
+              cardRetrieved: createDto.cardRetrieved ?? false,
+              cardRetrievedAt,
+              active: createDto.active ?? true,
+              deletedAt: null,
+            },
+          });
+        }
+        throw new BadRequestException(`Já existe um associado cadastrado com o CPF "${createDto.cpf}".`);
       }
-      throw new BadRequestException(`Já existe um associado cadastrado com o CPF "${createDto.cpf}".`);
     }
 
-    const existingEmail = await this.prisma.associate.findFirst({
-      where: { email: createDto.email.toLowerCase().trim() },
-    });
-    if (existingEmail) {
-      if (existingEmail.deletedAt) {
-        return this.prisma.associate.update({
-          where: { id: existingEmail.id },
-          data: {
-            name: createDto.name,
-            cpf: cleanedCpf,
-            phone: createDto.phone || null,
-            birthDate,
-            address,
-            admissionDate,
-            associationDate,
-            cardNumber,
-            cardRetrieved: createDto.cardRetrieved ?? false,
-            cardRetrievedAt,
-            active: createDto.active ?? true,
-            deletedAt: null,
-          },
-        });
+    // Check Email duplicate if provided
+    if (emailClean) {
+      const existingEmail = await this.prisma.associate.findFirst({
+        where: { email: emailClean },
+      });
+      if (existingEmail) {
+        if (existingEmail.deletedAt) {
+          return this.prisma.associate.update({
+            where: { id: existingEmail.id },
+            data: {
+              name: createDto.name,
+              cpf: cleanedCpf,
+              phone: createDto.phone || null,
+              birthDate,
+              address,
+              admissionDate,
+              associationDate,
+              cardNumber,
+              cardRetrieved: createDto.cardRetrieved ?? false,
+              cardRetrievedAt,
+              active: createDto.active ?? true,
+              deletedAt: null,
+            },
+          });
+        }
+        throw new BadRequestException(`Já existe um associado cadastrado com o e-mail "${createDto.email}".`);
       }
-      throw new BadRequestException(`Já existe um associado cadastrado com o e-mail "${createDto.email}".`);
     }
 
     if (cardNumber) {
@@ -122,7 +130,7 @@ export class AssociatesService implements OnModuleInit {
       data: {
         name: createDto.name,
         cpf: cleanedCpf,
-        email: createDto.email.toLowerCase().trim(),
+        email: emailClean,
         phone: createDto.phone || null,
         birthDate,
         address,
@@ -182,7 +190,7 @@ export class AssociatesService implements OnModuleInit {
         where,
         skip,
         take: limitNum,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { name: 'asc' },
       }),
     ]);
 
@@ -234,23 +242,45 @@ export class AssociatesService implements OnModuleInit {
 
     const data: any = { ...updateDto };
 
-    if (updateDto.cpf) {
-      data.cpf = this.cleanCpf(updateDto.cpf);
-      const existingCpf = await this.prisma.associate.findFirst({
-        where: { cpf: data.cpf, id: { not: id } },
-      });
-      if (existingCpf) {
-        throw new BadRequestException('Outro associado já utiliza este CPF.');
+    if (updateDto.cpf !== undefined) {
+      data.cpf = updateDto.cpf && updateDto.cpf.trim() ? this.cleanCpf(updateDto.cpf) : null;
+      if (data.cpf) {
+        const existingCpf = await this.prisma.associate.findFirst({
+          where: { cpf: data.cpf, id: { not: id } },
+        });
+        if (existingCpf) {
+          throw new BadRequestException('Outro associado já utiliza este CPF.');
+        }
       }
     }
 
-    if (updateDto.email) {
-      const existingEmail = await this.prisma.associate.findFirst({
-        where: { email: updateDto.email, id: { not: id } },
-      });
-      if (existingEmail) {
-        throw new BadRequestException('Outro associado já utiliza este e-mail.');
+    if (updateDto.email !== undefined) {
+      data.email = updateDto.email && updateDto.email.trim() ? updateDto.email.toLowerCase().trim() : null;
+      if (data.email) {
+        const existingEmail = await this.prisma.associate.findFirst({
+          where: { email: data.email, id: { not: id } },
+        });
+        if (existingEmail) {
+          throw new BadRequestException('Outro associado já utiliza este e-mail.');
+        }
       }
+    }
+
+    if (updateDto.birthDate !== undefined) {
+      data.birthDate = updateDto.birthDate ? new Date(updateDto.birthDate) : null;
+    }
+    if (updateDto.admissionDate !== undefined) {
+      data.admissionDate = updateDto.admissionDate ? new Date(updateDto.admissionDate) : null;
+    }
+    if (updateDto.associationDate !== undefined) {
+      data.associationDate = updateDto.associationDate ? new Date(updateDto.associationDate) : null;
+    }
+    if (updateDto.address !== undefined) {
+      data.address = updateDto.address
+        ? updateDto.address.startsWith('Departamento: ')
+          ? updateDto.address
+          : `Departamento: ${normalizeDepartmentName(updateDto.address)}`
+        : null;
     }
 
     if (updateDto.cardNumber !== undefined) {
