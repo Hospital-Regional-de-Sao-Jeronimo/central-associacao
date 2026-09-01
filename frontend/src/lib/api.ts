@@ -60,14 +60,34 @@ export const api = {
   },
 
   // Associates
-  getAssociates: (params?: { search?: string; active?: boolean; cardRetrieved?: boolean }) => {
+  getAssociates: (params?: {
+    search?: string;
+    active?: boolean;
+    cardRetrieved?: boolean;
+    department?: string;
+    page?: number;
+    limit?: number;
+  }) => {
     const query = new URLSearchParams();
     if (params?.search) query.append('search', params.search);
     if (params?.active !== undefined) query.append('active', String(params.active));
     if (params?.cardRetrieved !== undefined) query.append('cardRetrieved', String(params.cardRetrieved));
+    if (params?.department && params.department !== 'all') query.append('department', params.department);
+    if (params?.page) query.append('page', String(params.page));
+    if (params?.limit) query.append('limit', String(params.limit));
 
     const queryString = query.toString() ? `?${query.toString()}` : '';
-    return fetchJson<Associate[]>(`${API_BASE_URL}/associates${queryString}`);
+    return fetchJson<{
+      data: Associate[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(`${API_BASE_URL}/associates${queryString}`);
+  },
+
+  getDepartments: () => {
+    return fetchJson<string[]>(`${API_BASE_URL}/associates/departments`);
   },
 
   createAssociate: (data: Partial<Associate>) => {
@@ -94,6 +114,18 @@ export const api = {
   deleteAssociate: (id: string) => {
     return fetchJson<Associate>(`${API_BASE_URL}/associates/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  importAllLdapUsers: () => {
+    return fetchJson<{
+      totalLdap: number;
+      imported: number;
+      skipped: number;
+      reactivated: number;
+      errors: string[];
+    }>(`${API_BASE_URL}/associates/import-ldap`, {
+      method: 'POST',
     });
   },
 

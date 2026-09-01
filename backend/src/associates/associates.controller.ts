@@ -12,16 +12,31 @@ export class AssociatesController {
     return this.associatesService.create(createAssociateDto);
   }
 
+  @Post('import-ldap')
+  importAllFromLdap() {
+    return this.associatesService.importAllFromLdap();
+  }
+
+  @Get('departments')
+  getDepartments() {
+    return this.associatesService.getDepartments();
+  }
+
   @Get()
   findAll(
     @Query('search') search?: string,
     @Query('active') active?: string,
     @Query('cardRetrieved') cardRetrieved?: string,
+    @Query('department') department?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    const activeBool = active !== undefined ? active === 'true' : undefined;
-    const cardRetrievedBool = cardRetrieved !== undefined ? cardRetrieved === 'true' : undefined;
+    const activeBool = active !== undefined && active !== '' ? active === 'true' : undefined;
+    const cardRetrievedBool = cardRetrieved !== undefined && cardRetrieved !== '' ? cardRetrieved === 'true' : undefined;
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
 
-    return this.associatesService.findAll(search, activeBool, cardRetrievedBool);
+    return this.associatesService.findAll(search, activeBool, cardRetrievedBool, department, pageNum, limitNum);
   }
 
   @Get(':id')

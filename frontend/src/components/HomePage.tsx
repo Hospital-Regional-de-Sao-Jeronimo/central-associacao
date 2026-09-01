@@ -101,8 +101,8 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   const fetchAssociatesList = async () => {
     try {
-      const list = await api.getAssociates({ active: true });
-      setAssociates(list);
+      const res = await api.getAssociates({ active: true, limit: 100 });
+      setAssociates(res.data);
     } catch (err) {
       console.error('Erro ao carregar lista de associados:', err);
     }

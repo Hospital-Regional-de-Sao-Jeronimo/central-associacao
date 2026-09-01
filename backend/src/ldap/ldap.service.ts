@@ -6,6 +6,123 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterLdapUserDto } from './dto/register-ldap-user.dto';
 
+export function normalizeDepartmentName(raw?: string | null): string {
+  if (!raw || !raw.trim()) return 'Hospital Regional São Jerônimo';
+
+  let clean = raw.trim();
+  if (clean.startsWith('Departamento: ')) {
+    clean = clean.substring('Departamento: '.length).trim();
+  }
+
+  const lower = clean.toLowerCase();
+
+  if (
+    lower === 'ti' ||
+    lower.includes('tecnologia') ||
+    lower.includes('informacao') ||
+    lower.includes('informática')
+  ) {
+    return 'TI / Tecnologia da Informação';
+  }
+
+  if (lower.includes('medico') || lower.includes('médico')) {
+    return 'Médicos / Corpo Clínico';
+  }
+
+  if (lower.includes('enfermagem') || lower.includes('unidade.internacao')) {
+    return 'Enfermagem';
+  }
+
+  if (lower.includes('farmacia') || lower.includes('farmácia')) {
+    if (lower.includes('uti')) {
+      return 'Farmácia UTI';
+    }
+    return 'Farmácia';
+  }
+
+  if (lower.includes('recepcao') || lower.includes('recepção')) {
+    return 'Recepção';
+  }
+
+  if (lower.includes('faturamento')) {
+    return 'Faturamento';
+  }
+
+  if (lower.includes('higienizacao') || lower.includes('higienização')) {
+    return 'Higienização';
+  }
+
+  if (lower.includes('manutencao') || lower.includes('manutenção')) {
+    return 'Manutenção';
+  }
+
+  if (lower.includes('nutricao') || lower.includes('nutrição')) {
+    return 'Nutrição';
+  }
+
+  if (lower.includes('compras')) {
+    return 'Compras';
+  }
+
+  if (lower.includes('laboratorio') || lower.includes('laboratório')) {
+    return 'Laboratório';
+  }
+
+  if (lower.includes('bloco') || lower.includes('cirurgico') || lower.includes('cirúrgico')) {
+    return 'Bloco Cirúrgico';
+  }
+
+  if (lower.includes('centro') && lower.includes('clinico')) {
+    return 'Centro Clínico';
+  }
+
+  if (lower.includes('fisioterapia')) {
+    return 'Fisioterapia';
+  }
+
+  if (lower.includes('recursos') || lower.includes('humanos') || lower.includes('setor.pessoal')) {
+    return 'Recursos Humanos';
+  }
+
+  if (lower.includes('financeiro')) {
+    return 'Financeiro';
+  }
+
+  if (lower.includes('contabilidade')) {
+    return 'Contabilidade';
+  }
+
+  if (lower.includes('psicologia')) {
+    return 'Psicologia';
+  }
+
+  if (lower.includes('social')) {
+    return 'Serviço Social';
+  }
+
+  if (lower.includes('infeccao') || lower.includes('infecção')) {
+    return 'Controle de Infecção';
+  }
+
+  if (lower.includes('arquivo')) {
+    return 'Arquivo';
+  }
+
+  if (lower.includes('agencia') || lower.includes('transfusional')) {
+    return 'Agência Transfusional';
+  }
+
+  if (lower.includes('sesmet') || lower.includes('seguranca') || lower.includes('segurança')) {
+    return 'Segurança do Trabalho / SESMT';
+  }
+
+  if (lower.includes('administracao') || lower.includes('administração')) {
+    return 'Administração';
+  }
+
+  return clean.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export interface LdapUserSearchResult {
   username: string;
   nome_completo: string;
@@ -57,6 +174,98 @@ export class LdapService {
       grupos: ['g.rh.hrsj', 'g.acesso.remoto'],
     },
   ];
+
+  extractDepartmentFromDn(dn?: string | null): string | null {
+    if (!dn) return null;
+    const parts = dn.split(',');
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.toUpperCase().startsWith('OU=')) {
+        const ouRaw = trimmed.substring(3);
+        if (ouRaw.toUpperCase() !== 'HRSJ') {
+          const ouClean = ouRaw.replace(/\.hrsj$/i, '').replace(/\./g, ' ');
+          return ouClean.replace(/\b\w/g, (char) => char.toUpperCase());
+        }
+      }
+    }
+    return null;
+  }
+
+  async fetchAllLdapUsers(): Promise<LdapUserSearchResult[]> {
+    const baseUrls = [
+      process.env.LDAP_API_URL,
+      'https://hub.hsjeronimo.com.br/api/v1/ldap/usuarios',
+    ].filter(Boolean) as string[];
+
+    const apiToken =
+      process.env.LDAP_API_TOKEN ||
+      process.env.APP_KEY_PROD ||
+      'ak_producao_a53f41d8_0bac0a968051727b957efe649f2737bf30e58e25';
+
+    const userMap = new Map<string, LdapUserSearchResult>();
+
+    for (const baseUrl of baseUrls) {
+      try {
+        const searchTerms = ['a', 'e', 'i', 'o', 'u'];
+        for (const term of searchTerms) {
+          let page = 1;
+          let totalPages = 1;
+
+          while (page <= totalPages && page <= 50) {
+            const url = `${baseUrl}?q=${encodeURIComponent(term)}&limite=100&pagina=${page}`;
+            const response = await fetch(url, {
+              headers: {
+                Accept: 'application/json',
+                Authorization: `Bearer ${apiToken}`,
+              },
+            });
+
+            if (!response.ok) break;
+
+            const data = await response.json();
+            let items: LdapUserSearchResult[] = [];
+
+            if (Array.isArray(data)) {
+              items = data;
+            } else if (data && Array.isArray(data.data)) {
+              items = data.data;
+              totalPages = data.total_paginas || 1;
+            }
+
+            for (const item of items) {
+              if (item && item.username && !userMap.has(item.username)) {
+                userMap.set(item.username, item);
+              }
+            }
+
+            page++;
+          }
+        }
+
+        if (userMap.size > 0) {
+          break;
+        }
+      } catch (err) {
+        // Tenta próxima URL
+      }
+    }
+
+    let fetchedUsers = Array.from(userMap.values());
+
+    if (fetchedUsers.length === 0) {
+      fetchedUsers = [...this.mockLdapUsers];
+    }
+
+    const activeUsers = fetchedUsers.filter((user) => Boolean(user.ativo) === true);
+
+    return activeUsers.map((user) => {
+      const rawDept = user.departamento || this.extractDepartmentFromDn(user.dn);
+      return {
+        ...user,
+        departamento: normalizeDepartmentName(rawDept),
+      };
+    });
+  }
 
   async searchLdap(query?: string): Promise<LdapUserSearchResult[]> {
     if (!query || !query.trim()) {
@@ -158,7 +367,12 @@ export class LdapService {
     }
 
     // REGRA CRÍTICA: Somente usuários com ativo: true devem aparecer!
-    return fetchedUsers.filter((user) => Boolean(user.ativo) === true);
+    return fetchedUsers
+      .filter((user) => Boolean(user.ativo) === true)
+      .map((user) => ({
+        ...user,
+        departamento: user.departamento || this.extractDepartmentFromDn(user.dn),
+      }));
   }
 
   async registerUser(dto: RegisterLdapUserDto) {
