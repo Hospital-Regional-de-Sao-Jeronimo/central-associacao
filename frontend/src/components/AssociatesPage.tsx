@@ -29,6 +29,9 @@ export const AssociatesPage: React.FC = () => {
   const [cardFilter, setCardFilter] = useState<'all' | 'retrieved' | 'pending'>('all');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [departmentsList, setDepartmentsList] = useState<string[]>([]);
+  const [birthDateFilter, setBirthDateFilter] = useState('');
+  const [admissionDateFilter, setAdmissionDateFilter] = useState('');
+  const [letterFilter, setLetterFilter] = useState<string>('all');
 
   // Pagination State
   const [page, setPage] = useState(1);
@@ -59,6 +62,9 @@ export const AssociatesPage: React.FC = () => {
         active: activeParam,
         cardRetrieved: cardParam,
         department: departmentFilter === 'all' ? undefined : departmentFilter,
+        birthDate: birthDateFilter || undefined,
+        admissionDate: admissionDateFilter || undefined,
+        letter: letterFilter === 'all' ? undefined : letterFilter,
         page,
         limit,
       });
@@ -75,14 +81,14 @@ export const AssociatesPage: React.FC = () => {
   // Reset to page 1 whenever filters change
   useEffect(() => {
     setPage(1);
-  }, [search, activeFilter, cardFilter, departmentFilter]);
+  }, [search, activeFilter, cardFilter, departmentFilter, birthDateFilter, admissionDateFilter, letterFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchAssociates();
     }, 200);
     return () => clearTimeout(timer);
-  }, [search, activeFilter, cardFilter, departmentFilter, page, limit]);
+  }, [search, activeFilter, cardFilter, departmentFilter, birthDateFilter, admissionDateFilter, letterFilter, page, limit]);
 
   const handleSave = async (data: Partial<Associate>) => {
     if (editingAssociate) {
@@ -118,6 +124,9 @@ export const AssociatesPage: React.FC = () => {
     setActiveFilter('all');
     setCardFilter('all');
     setDepartmentFilter('all');
+    setBirthDateFilter('');
+    setAdmissionDateFilter('');
+    setLetterFilter('all');
     setPage(1);
   };
 
@@ -131,7 +140,14 @@ export const AssociatesPage: React.FC = () => {
     }
   };
 
-  const activeFiltersCount = (search ? 1 : 0) + (activeFilter !== 'all' ? 1 : 0) + (cardFilter !== 'all' ? 1 : 0) + (departmentFilter !== 'all' ? 1 : 0);
+  const activeFiltersCount =
+    (search ? 1 : 0) +
+    (activeFilter !== 'all' ? 1 : 0) +
+    (cardFilter !== 'all' ? 1 : 0) +
+    (departmentFilter !== 'all' ? 1 : 0) +
+    (birthDateFilter ? 1 : 0) +
+    (admissionDateFilter ? 1 : 0) +
+    (letterFilter !== 'all' ? 1 : 0);
 
   const startRecord = total === 0 ? 0 : (page - 1) * limit + 1;
   const endRecord = Math.min(page * limit, total);
@@ -192,8 +208,9 @@ export const AssociatesPage: React.FC = () => {
 
       {/* Filter Card Container */}
       <div className="bg-slate-50/80 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-3">
+        {/* Row 1: Dropdown Filters & Clear Filters */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 shadow-2xs">
               <Filter className="w-3.5 h-3.5 text-blue-600" />
               <span>Filtros</span>
@@ -237,17 +254,76 @@ export const AssociatesPage: React.FC = () => {
                 </option>
               ))}
             </select>
+
+            {/* Letra Inicial */}
+            <select
+              value={letterFilter}
+              onChange={(e: any) => setLetterFilter(e.target.value)}
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+            >
+              <option value="all">Letra: Todas</option>
+              {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((char) => (
+                <option key={char} value={char}>
+                  Letra {char}
+                </option>
+              ))}
+            </select>
           </div>
 
           {activeFiltersCount > 0 && (
             <button
               onClick={clearFilters}
-              className="flex items-center space-x-1 px-3 py-1 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 transition cursor-pointer"
+              className="flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 transition cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               <span>Limpar Filtros</span>
             </button>
           )}
+        </div>
+
+        {/* Row 2: Date Filters */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+          {/* Nascido em */}
+          <div className="flex items-center space-x-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
+            <span className="text-slate-500 dark:text-slate-400 font-bold whitespace-nowrap">Nascido em:</span>
+            <input
+              type="date"
+              value={birthDateFilter}
+              onChange={(e) => setBirthDateFilter(e.target.value)}
+              className="bg-transparent text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer"
+            />
+            {birthDateFilter && (
+              <button
+                type="button"
+                onClick={() => setBirthDateFilter('')}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded cursor-pointer"
+                title="Limpar filtro de data de nascimento"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Admitido em */}
+          <div className="flex items-center space-x-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
+            <span className="text-slate-500 dark:text-slate-400 font-bold whitespace-nowrap">Admitido em:</span>
+            <input
+              type="date"
+              value={admissionDateFilter}
+              onChange={(e) => setAdmissionDateFilter(e.target.value)}
+              className="bg-transparent text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer"
+            />
+            {admissionDateFilter && (
+              <button
+                type="button"
+                onClick={() => setAdmissionDateFilter('')}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded cursor-pointer"
+                title="Limpar filtro de data de admissão"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search Bar Input */}

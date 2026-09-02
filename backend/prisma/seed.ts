@@ -20,13 +20,11 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Populando banco de dados com dados iniciais...');
 
-  // Clean existing
-  await prisma.associate.deleteMany({});
-  await prisma.partnerBenefit.deleteMany({});
-
-  // Seed Associates
-  await prisma.associate.createMany({
-    data: [
+  const associateCount = await prisma.associate.count();
+  if (associateCount === 0) {
+    console.log('Criando associados iniciais...');
+    await prisma.associate.createMany({
+      data: [
       {
         name: 'Ana Maria da Silva',
         cpf: '12345678901',
@@ -68,66 +66,69 @@ async function main() {
         cardRetrievedAt: new Date('2010-07-05'),
         active: true,
       },
-    ],
-  });
+    });
+  }
 
-  // Seed Partner Benefits
-  await prisma.partnerBenefit.createMany({
-    data: [
-      {
-        name: 'Drogaria & Farmácia São José',
-        category: BenefitCategory.SAUDE,
-        discountPercentage: '20% OFF',
-        description:
-          'Desconto de 20% em medicamentos genéricos e 10% em perfumaria na apresentação da carteirinha da associação.',
-        location: 'Rua Adolfo Donato da Silva, 45 - Praia Comprida, São José',
-        phone: '(48) 3247-0000',
-        website: 'https://farmaciasaojose.com.br',
-        imageUrl:
-          'https://images.unsplash.com/photo-1576602976047-174e57a47881?w=500&auto=format&fit=crop&q=60',
-        active: true,
-      },
-      {
-        name: 'Restaurante Sabor & Saúde',
-        category: BenefitCategory.ALIMENTACAO,
-        discountPercentage: '15% OFF',
-        description:
-          'Desconto no buffet no almoço de segunda a sexta para funcionários associados do HRSJ.',
-        location: 'Av. Leoberto Leal, 1200 - Barreiros, São José',
-        phone: '(48) 3346-5544',
-        website: 'https://instagram.com/restaurantesaboresaude',
-        imageUrl:
-          'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&auto=format&fit=crop&q=60',
-        active: true,
-      },
-      {
-        name: 'Academia FitLife São José',
-        category: BenefitCategory.SAUDE,
-        discountPercentage: '25% OFF',
-        description:
-          'Isenção de taxa de matrícula e 25% de desconto nas mensalidades do plano anual.',
-        location: 'Rua Kobrasol, 300 - Kobrasol, São José',
-        phone: '(48) 99654-3210',
-        website: 'https://fitlife.com.br',
-        imageUrl:
-          'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500&auto=format&fit=crop&q=60',
-        active: true,
-      },
-      {
-        name: 'Faculdade & Centro Universitário Unifa',
-        category: BenefitCategory.EDUCACAO,
-        discountPercentage: '30% OFF',
-        description:
-          'Bolsa de 30% de desconto para cursos de graduação e pós-graduação EAD e presenciais.',
-        location: 'Rodovia BR-101, Km 205 - São José',
-        phone: '(48) 0800-700-1000',
-        website: 'https://unifa.edu.br',
-        imageUrl:
-          'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=500&auto=format&fit=crop&q=60',
-        active: true,
-      },
-    ],
-  });
+  const benefitCount = await prisma.partnerBenefit.count();
+  if (benefitCount === 0) {
+    console.log('Criando benefícios de parceiros iniciais...');
+    await prisma.partnerBenefit.createMany({
+      data: [
+        {
+          name: 'Drogaria & Farmácia São José',
+          category: BenefitCategory.SAUDE,
+          discountPercentage: '20% OFF',
+          description:
+            'Desconto de 20% em medicamentos genéricos e 10% em perfumaria na apresentação da carteirinha da associação.',
+          location: 'Rua Adolfo Donato da Silva, 45 - Praia Comprida, São José',
+          phone: '(48) 3247-0000',
+          website: 'https://farmaciasaojose.com.br',
+          imageUrl:
+            'https://images.unsplash.com/photo-1576602976047-174e57a47881?w=500&auto=format&fit=crop&q=60',
+          active: true,
+        },
+        {
+          name: 'Restaurante Sabor & Saúde',
+          category: BenefitCategory.ALIMENTACAO,
+          discountPercentage: '15% OFF',
+          description:
+            'Desconto no buffet no almoço de segunda a sexta para funcionários associados do HRSJ.',
+          location: 'Av. Leoberto Leal, 1200 - Barreiros, São José',
+          phone: '(48) 3346-5544',
+          website: 'https://instagram.com/restaurantesaboresaude',
+          imageUrl:
+            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&auto=format&fit=crop&q=60',
+          active: true,
+        },
+        {
+          name: 'Academia FitLife São José',
+          category: BenefitCategory.SAUDE,
+          discountPercentage: '25% OFF',
+          description:
+            'Isenção de taxa de matrícula e 25% de desconto nas mensalidades do plano anual.',
+          location: 'Rua Kobrasol, 300 - Kobrasol, São José',
+          phone: '(48) 99654-3210',
+          website: 'https://fitlife.com.br',
+          imageUrl:
+            'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500&auto=format&fit=crop&q=60',
+          active: true,
+        },
+        {
+          name: 'Faculdade & Centro Universitário Unifa',
+          category: BenefitCategory.EDUCACAO,
+          discountPercentage: '30% OFF',
+          description:
+            'Bolsa de 30% de desconto para cursos de graduação e pós-graduação EAD e presenciais.',
+          location: 'Rodovia BR-101, Km 205 - São José',
+          phone: '(48) 0800-700-1000',
+          website: 'https://unifa.edu.br',
+          imageUrl:
+            'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=500&auto=format&fit=crop&q=60',
+          active: true,
+        },
+      ],
+    });
+  }
 
   // Seed Admin User
   const adminEmail: string = process.env.ADMIN_EMAIL || 'admin@hrsj.sc.gov.br';

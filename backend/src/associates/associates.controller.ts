@@ -28,6 +28,9 @@ export class AssociatesController {
     @Query('active') active?: string,
     @Query('cardRetrieved') cardRetrieved?: string,
     @Query('department') department?: string,
+    @Query('birthDate') birthDate?: string,
+    @Query('admissionDate') admissionDate?: string,
+    @Query('letter') letter?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -36,7 +39,17 @@ export class AssociatesController {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
 
-    return this.associatesService.findAll(search, activeBool, cardRetrievedBool, department, pageNum, limitNum);
+    return this.associatesService.findAll(
+      search,
+      activeBool,
+      cardRetrievedBool,
+      department,
+      birthDate,
+      admissionDate,
+      letter,
+      pageNum,
+      limitNum,
+    );
   }
 
   @Get(':id')

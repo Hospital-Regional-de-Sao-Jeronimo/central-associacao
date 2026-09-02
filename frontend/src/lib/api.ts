@@ -65,6 +65,9 @@ export const api = {
     active?: boolean;
     cardRetrieved?: boolean;
     department?: string;
+    birthDate?: string;
+    admissionDate?: string;
+    letter?: string;
     page?: number;
     limit?: number;
   }) => {
@@ -73,6 +76,9 @@ export const api = {
     if (params?.active !== undefined) query.append('active', String(params.active));
     if (params?.cardRetrieved !== undefined) query.append('cardRetrieved', String(params.cardRetrieved));
     if (params?.department && params.department !== 'all') query.append('department', params.department);
+    if (params?.birthDate) query.append('birthDate', params.birthDate);
+    if (params?.admissionDate) query.append('admissionDate', params.admissionDate);
+    if (params?.letter && params.letter !== 'all') query.append('letter', params.letter);
     if (params?.page) query.append('page', String(params.page));
     if (params?.limit) query.append('limit', String(params.limit));
 

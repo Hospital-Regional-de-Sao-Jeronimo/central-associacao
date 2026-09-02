@@ -149,6 +149,9 @@ export class AssociatesService implements OnModuleInit {
     active?: boolean,
     cardRetrieved?: boolean,
     department?: string,
+    birthDate?: string,
+    admissionDate?: string,
+    letter?: string,
     page: number = 1,
     limit: number = 10,
   ) {
@@ -187,6 +190,10 @@ export class AssociatesService implements OnModuleInit {
       }
     }
 
+    if (letter && letter.trim() && letter !== 'all') {
+      where.name = { startsWith: letter.trim(), mode: 'insensitive' };
+    }
+
     if (typeof active === 'boolean') {
       where.active = active;
     }
@@ -198,6 +205,30 @@ export class AssociatesService implements OnModuleInit {
     if (department && department.trim() && department !== 'all') {
       const targetNorm = normalizeDepartmentName(department);
       where.address = { contains: targetNorm, mode: 'insensitive' };
+    }
+
+    if (birthDate && birthDate.trim()) {
+      const dateParts = birthDate.trim().split('-');
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const day = parseInt(dateParts[2], 10);
+        const start = new Date(Date.UTC(year, month, day - 1, 12, 0, 0, 0));
+        const end = new Date(Date.UTC(year, month, day + 1, 12, 0, 0, 999));
+        where.birthDate = { gte: start, lte: end };
+      }
+    }
+
+    if (admissionDate && admissionDate.trim()) {
+      const dateParts = admissionDate.trim().split('-');
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const day = parseInt(dateParts[2], 10);
+        const start = new Date(Date.UTC(year, month, day - 1, 12, 0, 0, 0));
+        const end = new Date(Date.UTC(year, month, day + 1, 12, 0, 0, 999));
+        where.admissionDate = { gte: start, lte: end };
+      }
     }
 
     const pageNum = Math.max(1, Number(page) || 1);

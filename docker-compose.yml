@@ -30,6 +30,8 @@ services:
 
     container_name: central-associacao-api
     restart: unless-stopped
+    volumes:
+      - ./backend/src:/app/src
 
     depends_on:
       - postgres
@@ -57,6 +59,8 @@ services:
 
     container_name: central-associacao-web
     restart: unless-stopped
+    volumes:
+      - ./frontend/src:/app/src
 
     depends_on:
       - backend
