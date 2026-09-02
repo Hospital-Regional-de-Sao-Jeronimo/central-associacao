@@ -157,14 +157,34 @@ export class AssociatesService implements OnModuleInit {
     };
 
     if (search && search.trim()) {
-      const cleanSearch = this.cleanCpf(search);
-      where.OR = [
-        { name: { contains: search.trim(), mode: 'insensitive' } },
-        { email: { contains: search.trim(), mode: 'insensitive' } },
-        { address: { contains: search.trim(), mode: 'insensitive' } },
-        { cpf: { contains: cleanSearch || search.trim() } },
-        { cardNumber: { contains: search.trim(), mode: 'insensitive' } },
-      ];
+      const searchTerm = search.trim();
+      const cleanSearch = this.cleanCpf(searchTerm);
+
+      if (searchTerm.length === 1) {
+        where.OR = [
+          { name: { startsWith: searchTerm, mode: 'insensitive' } },
+          { name: { contains: ` ${searchTerm}`, mode: 'insensitive' } },
+          { email: { startsWith: searchTerm, mode: 'insensitive' } },
+          { cardNumber: { startsWith: searchTerm, mode: 'insensitive' } },
+          { cpf: { startsWith: cleanSearch || searchTerm } },
+        ];
+      } else {
+        const orConditions: any[] = [
+          { name: { startsWith: searchTerm, mode: 'insensitive' } },
+          { name: { contains: ` ${searchTerm}`, mode: 'insensitive' } },
+          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { email: { contains: searchTerm, mode: 'insensitive' } },
+          { cardNumber: { contains: searchTerm, mode: 'insensitive' } },
+        ];
+
+        if (cleanSearch) {
+          orConditions.push({ cpf: { contains: cleanSearch } });
+        } else {
+          orConditions.push({ cpf: { contains: searchTerm } });
+        }
+
+        where.OR = orConditions;
+      }
     }
 
     if (typeof active === 'boolean') {
