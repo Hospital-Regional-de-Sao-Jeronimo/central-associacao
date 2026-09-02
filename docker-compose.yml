@@ -32,6 +32,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
 
     depends_on:
       - postgres
