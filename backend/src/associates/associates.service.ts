@@ -232,7 +232,7 @@ export class AssociatesService implements OnModuleInit {
     }
 
     const pageNum = Math.max(1, Number(page) || 1);
-    const limitNum = Math.max(1, Math.min(100, Number(limit) || 10));
+    const limitNum = Math.max(1, Math.min(100000, Number(limit) || 10));
     const skip = (pageNum - 1) * limitNum;
 
     const [total, data] = await Promise.all([

@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
+  Printer,
+  Cross,
 } from 'lucide-react';
 
 import type { Associate } from '../types';
@@ -45,6 +47,110 @@ export const AssociatesPage: React.FC = () => {
 
   // LDAP Search Modal
   const [isLdapModalOpen, setIsLdapModalOpen] = useState(false);
+
+  // Print & Selection State
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [allAssociatesForPrint, setAllAssociatesForPrint] = useState<Associate[] | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isAllSelected, setIsAllSelected] = useState(false);
+
+  // Seleção individual de linha
+  const toggleSelectOne = (id: string) => {
+    if (isAllSelected) {
+      // Se estava no modo global, muda para seleção individual com todos da página exceto este desmarcado
+      const pageIdsExceptOne = associates.map((a) => a.id).filter((pageId) => pageId !== id);
+      setIsAllSelected(false);
+      setSelectedIds(new Set(pageIdsExceptOne));
+      return;
+    }
+
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  // Seleção Global: Selecionar Todos os 811 associados do quadro
+  const handleToggleSelectAllGlobal = () => {
+    if (isAllSelected) {
+      setIsAllSelected(false);
+      setSelectedIds(new Set());
+    } else {
+      setIsAllSelected(true);
+      setSelectedIds(new Set());
+    }
+  };
+
+  // Seleção por Página: Selecionar apenas os associados visíveis na página atual (ex: 10)
+  const handleTogglePageSelect = () => {
+    const pageIds = associates.map((a) => a.id);
+    if (pageIds.length === 0) return;
+
+    if (isAllSelected) {
+      setIsAllSelected(false);
+      setSelectedIds(new Set());
+      return;
+    }
+
+    const isPageFullySelected = pageIds.every((id) => selectedIds.has(id));
+
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (isPageFullySelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const isAssociateSelected = (id: string) => isAllSelected || selectedIds.has(id);
+
+  const handlePrintAll = async () => {
+    setIsPrinting(true);
+    try {
+      const activeParam = activeFilter === 'all' ? undefined : activeFilter === 'active';
+      const cardParam = cardFilter === 'all' ? undefined : cardFilter === 'retrieved';
+      const res = await api.getAssociates({
+        search,
+        active: activeParam,
+        cardRetrieved: cardParam,
+        department: departmentFilter === 'all' ? undefined : departmentFilter,
+        birthDate: birthDateFilter || undefined,
+        admissionDate: admissionDateFilter || undefined,
+        letter: letterFilter === 'all' ? undefined : letterFilter,
+        page: 1,
+        limit: 100000,
+      });
+
+      let dataToPrint = res.data;
+      if (selectedIds.size > 0 && !isAllSelected) {
+        dataToPrint = res.data.filter((assoc) => selectedIds.has(assoc.id));
+      }
+
+      if (dataToPrint.length === 0) {
+        alert('Nenhum associado selecionado para impressão.');
+        setIsPrinting(false);
+        return;
+      }
+
+      setAllAssociatesForPrint(dataToPrint);
+      setTimeout(() => {
+        window.print();
+        setIsPrinting(false);
+      }, 350);
+    } catch (err) {
+      console.error('Erro ao buscar associados para impressão:', err);
+      alert('Erro ao carregar os dados para impressão.');
+      setIsPrinting(false);
+    }
+  };
 
   useEffect(() => {
     api.getDepartments()
@@ -170,41 +276,65 @@ export const AssociatesPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-6">
-      
-      {/* Title Header with Action Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
-        <div>
-          <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
-            Quadro de Associados
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-            Acompanhe e gerencie os cadastros dos funcionários associados do HRSJ.
-          </p>
-        </div>
+    <>
+      <div className="no-print bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-6">
+        
+        {/* Title Header with Action Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div>
+            <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+              Quadro de Associados
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              Acompanhe e gerencie os cadastros dos funcionários associados do HRSJ.
+            </p>
+          </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setIsLdapModalOpen(true)}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition cursor-pointer"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Importar do LDAP</span>
-          </button>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handlePrintAll}
+              disabled={isPrinting}
+              className="flex items-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-extrabold rounded-xl shadow-sm transition cursor-pointer disabled:opacity-50 border border-slate-700/50"
+              title="Imprimir associados selecionados ou quadro completo"
+            >
+              {isPrinting ? (
+                <>
+                  <RotateCw className="w-4 h-4 animate-spin" />
+                  <span>Gerando Impressão...</span>
+                </>
+              ) : (
+                <>
+                  <Printer className="w-4 h-4" />
+                  <span>
+                    {selectedIds.size > 0 && !isAllSelected
+                      ? `Imprimir Selecionados (${selectedIds.size})`
+                      : 'Imprimir Quadro'}
+                  </span>
+                </>
+              )}
+            </button>
 
-          <button
-            onClick={() => {
-              setEditingAssociate(null);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition cursor-pointer"
-          >
-            <Users className="w-4 h-4" />
-            <span>Novo Associado</span>
-          </button>
+            <button
+              onClick={() => setIsLdapModalOpen(true)}
+              className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Importar do LDAP</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setEditingAssociate(null);
+                setIsModalOpen(true);
+              }}
+              className="flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition cursor-pointer"
+            >
+              <Users className="w-4 h-4" />
+              <span>Novo Associado</span>
+            </button>
+          </div>
         </div>
-      </div>
 
       {/* Filter Card Container */}
       <div className="bg-slate-50/80 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-3">
@@ -220,6 +350,22 @@ export const AssociatesPage: React.FC = () => {
                 </span>
               )}
             </div>
+
+            {/* Checkbox Selecionar Todos ao lado dos Filtros */}
+            <label className="inline-flex items-center space-x-2 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={handleToggleSelectAllGlobal}
+                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer accent-blue-600"
+              />
+              <span>Selecionar todos</span>
+              {isAllSelected && (
+                <span className="w-4.5 h-4.5 rounded-full bg-blue-600 text-white text-[10px] font-black flex items-center justify-center">
+                  {total}
+                </span>
+              )}
+            </label>
 
             {/* Quick Filter Inputs */}
             <select
@@ -394,6 +540,15 @@ export const AssociatesPage: React.FC = () => {
             <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
               <thead className="bg-slate-100/70 dark:bg-slate-800/80 text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700/60">
                 <tr>
+                  <th className="px-3 py-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected || (associates.length > 0 && associates.every((a) => selectedIds.has(a.id)))}
+                      onChange={handleTogglePageSelect}
+                      className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                      title="Selecionar/Desmarcar associados desta página"
+                    />
+                  </th>
                   <th className="px-4 py-3">#</th>
                   <th className="px-4 py-3">Nome do Associado</th>
                   <th className="px-4 py-3">CPF / Contato</th>
@@ -405,14 +560,26 @@ export const AssociatesPage: React.FC = () => {
               </thead>
 
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                {associates.map((assoc, index) => (
-                  <tr
-                    key={assoc.id}
-                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
-                  >
-                    <td className="px-4 py-3.5 text-slate-400 font-bold">
-                      #{startRecord + index}
-                    </td>
+                {associates.map((assoc, index) => {
+                  const selected = isAssociateSelected(assoc.id);
+                  return (
+                    <tr
+                      key={assoc.id}
+                      className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition ${
+                        selected ? 'bg-blue-50/40 dark:bg-blue-950/20' : ''
+                      }`}
+                    >
+                      <td className="px-3 py-3.5 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggleSelectOne(assoc.id)}
+                          className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                        />
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-400 font-bold">
+                        #{startRecord + index}
+                      </td>
 
                     <td className="px-4 py-3.5">
                       <div className="font-bold text-slate-900 dark:text-white text-sm">
@@ -509,7 +676,8 @@ export const AssociatesPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -533,6 +701,7 @@ export const AssociatesPage: React.FC = () => {
                 <option value={25}>25</option>
                 <option value={50}>50</option>
                 <option value={100}>100</option>
+                <option value={100000}>Todos ({total})</option>
               </select>
             </div>
 
@@ -640,5 +809,101 @@ export const AssociatesPage: React.FC = () => {
         }}
       />
     </div>
+
+    {/* ESTRUTURA DE IMPRESSÃO DEDICADA E TIMBRADA (PAPEL / PDF) */}
+    <div className="hidden print:block print-only p-4 bg-white text-slate-900 font-sans">
+      {/* Cabeçalho Timbrado */}
+      <div className="flex items-center justify-between border-b-2 border-slate-900 pb-3 mb-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold">
+            <Cross className="w-6 h-6 stroke-[2.5]" />
+          </div>
+          <div>
+            <h1 className="text-[10px] uppercase font-black tracking-wider text-slate-600 leading-none">
+              Hospital Regional São Jerônimo
+            </h1>
+            <h2 className="text-base font-black tracking-tight text-slate-900 uppercase leading-tight mt-0.5">
+              Central da Associação dos Funcionários
+            </h2>
+            <p className="text-[9px] text-slate-500 font-semibold">
+              Relatório Oficial do Quadro Geral de Associados
+            </p>
+          </div>
+        </div>
+        <div className="text-right text-[10px] text-slate-600 space-y-0.5 font-medium">
+          <div><strong className="text-slate-900">Data de Emissão:</strong> {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+          <div><strong className="text-slate-900">Total Impresso:</strong> {(allAssociatesForPrint || associates).length} associado(s)</div>
+          {activeFiltersCount > 0 && (
+            <div className="text-blue-800 font-bold">Relatório com filtros aplicados</div>
+          )}
+        </div>
+      </div>
+
+      {/* Resumo de Filtros Aplicados se houver */}
+      {activeFiltersCount > 0 && (
+        <div className="mb-4 p-2 bg-slate-50 border border-slate-300 rounded-lg text-[9px] text-slate-700 flex flex-wrap gap-x-3 gap-y-1">
+          <span className="font-bold text-slate-900">Filtros Ativos:</span>
+          {search && <span>• Busca: "{search}"</span>}
+          {activeFilter !== 'all' && <span>• Status: {activeFilter === 'active' ? 'Ativos' : 'Inativos'}</span>}
+          {cardFilter !== 'all' && <span>• Carteirinha: {cardFilter === 'retrieved' ? 'Retiradas' : 'Pendentes'}</span>}
+          {departmentFilter !== 'all' && <span>• Setor: {departmentFilter}</span>}
+          {letterFilter !== 'all' && <span>• Inicial: {letterFilter}</span>}
+          {birthDateFilter && <span>• Nascimento: {formatDate(birthDateFilter)}</span>}
+          {admissionDateFilter && <span>• Admissão: {formatDate(admissionDateFilter)}</span>}
+        </div>
+      )}
+
+      {/* Tabela de Associados para Impressão */}
+      <table className="w-full text-left text-[9.5px] border-collapse">
+        <thead>
+          <tr className="border-b-2 border-slate-900 bg-slate-100 text-slate-900 font-black uppercase text-[8.5px] tracking-wider">
+            <th className="py-2 px-1.5 w-8">#</th>
+            <th className="py-2 px-1.5">Nome do Associado</th>
+            <th className="py-2 px-1.5">CPF</th>
+            <th className="py-2 px-1.5">Contato / E-mail</th>
+            <th className="py-2 px-1.5">Status</th>
+            <th className="py-2 px-1.5">Carteirinha</th>
+            <th className="py-2 px-1.5">Setor / Departamento</th>
+            <th className="py-2 px-1.5 text-right">Admissão</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-200 font-medium text-slate-800">
+          {(allAssociatesForPrint || associates).map((assoc, index) => (
+            <tr key={assoc.id} className="print-break-inside-avoid">
+              <td className="py-1.5 px-1.5 text-slate-500 font-bold">#{index + 1}</td>
+              <td className="py-1.5 px-1.5 font-bold text-slate-900">{assoc.name}</td>
+              <td className="py-1.5 px-1.5 font-mono">{assoc.cpf || '-'}</td>
+              <td className="py-1.5 px-1.5">
+                <div>{assoc.email || '-'}</div>
+                {assoc.phone && <div className="text-[8.5px] text-slate-500">{assoc.phone}</div>}
+              </td>
+              <td className="py-1.5 px-1.5 font-bold">
+                {assoc.active ? (
+                  <span className="text-emerald-700">ATIVO</span>
+                ) : (
+                  <span className="text-rose-700">INATIVO</span>
+                )}
+              </td>
+              <td className="py-1.5 px-1.5">
+                {assoc.cardRetrieved ? (
+                  <span className="text-blue-700 font-bold">Retirou {assoc.cardNumber ? `(#${assoc.cardNumber})` : ''}</span>
+                ) : (
+                  <span className="text-amber-700 font-semibold">Pendente</span>
+                )}
+              </td>
+              <td className="py-1.5 px-1.5">{assoc.address?.replace('Departamento: ', '') || '-'}</td>
+              <td className="py-1.5 px-1.5 text-right font-mono">{formatDate(assoc.admissionDate)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Rodapé da Impressão */}
+      <div className="mt-6 pt-2 border-t border-slate-300 text-[8.5px] text-slate-500 flex justify-between items-center">
+        <div>Associação dos Funcionários do HRSJ — Quadro Oficial de Associados</div>
+        <div>Relatório impresso via Central da Associação</div>
+      </div>
+    </div>
+  </>
   );
 };
