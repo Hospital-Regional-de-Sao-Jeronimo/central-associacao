@@ -23,9 +23,47 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleInit() {
     await this.$connect();
+    await this.ensurePartnerSchema();
+  }
+
+  private async ensurePartnerSchema() {
+    try {
+      await this.$executeRawUnsafe(`
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_enum
+            WHERE enumlabel = 'PARTNER'
+              AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'Role')
+          ) THEN
+            ALTER TYPE "Role" ADD VALUE 'PARTNER';
+          END IF;
+        END$$;
+      `);
+
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "users"
+        ADD COLUMN IF NOT EXISTS "partner_benefit_id" TEXT UNIQUE
+        REFERENCES "partner_benefits"("id") ON DELETE SET NULL;
+      `);
+
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "discount_usages" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "associate_id" TEXT NOT NULL REFERENCES "associates"("id") ON DELETE CASCADE,
+          "partner_benefit_id" TEXT NOT NULL REFERENCES "partner_benefits"("id") ON DELETE CASCADE,
+          "discount_applied" TEXT NOT NULL,
+          "notes" TEXT,
+          "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+    } catch (err) {
+      console.warn('Aviso ao verificar schema de parceiros:', err);
+    }
   }
 
   async onModuleDestroy() {
     await this.$disconnect();
   }
 }
+

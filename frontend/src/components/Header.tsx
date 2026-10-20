@@ -1,10 +1,11 @@
 import React from 'react';
 import { LogOut, Cross, Lock, Home, Sparkles, Users, Sun, Moon } from 'lucide-react';
+import type { AuthUser } from '../types';
 
 interface HeaderProps {
   activeTab: 'home' | 'benefits' | 'associates';
   setActiveTab: (tab: 'home' | 'benefits' | 'associates') => void;
-  user: { name: string; email: string; role?: string } | null;
+  user: AuthUser | null;
   onLoginClick: () => void;
   onLogoutClick: () => void;
   theme: 'light' | 'dark';
@@ -20,6 +21,8 @@ export const Header: React.FC<HeaderProps> = ({
   theme,
   onToggleTheme,
 }) => {
+  const isPartner = user?.role === 'PARTNER';
+
   return (
     <header className="bg-[#1e2e4a] text-white sticky top-0 z-40 border-b border-slate-700/50 shadow-md">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Estabelecimentos Credenciados</span>
             </button>
 
-            {/* Quadro de Associados (EXCLUSIVO PARA LOGADOS!) */}
+            {/* Quadro de Associados / Portal do Parceiro (EXCLUSIVO PARA LOGADOS!) */}
             {user && (
               <button
                 onClick={() => setActiveTab('associates')}
@@ -78,8 +81,8 @@ export const Header: React.FC<HeaderProps> = ({
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>Quadro de Associados</span>
-                <span className="w-2 h-2 rounded-full bg-sky-400" />
+                <span>{isPartner ? 'Validar Associados & Descontos' : 'Quadro de Associados'}</span>
+                <span className={`w-2 h-2 rounded-full ${isPartner ? 'bg-emerald-400' : 'bg-sky-400'}`} />
               </button>
             )}
           </nav>
@@ -109,10 +112,16 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center space-x-3">
                 <div className="text-right hidden sm:block">
                   <div className="text-xs font-bold text-white leading-none">
-                    {user.name}
+                    {user.partnerName || user.name}
                   </div>
-                  <span className="text-[10px] text-sky-400 font-semibold">
-                    Gestor Autenticado
+                  <span
+                    className={`text-[10px] font-semibold ${
+                      isPartner ? 'text-emerald-400' : 'text-sky-400'
+                    }`}
+                  >
+                    {isPartner
+                      ? `Parceiro Credenciado${user.discountPercentage ? ` • ${user.discountPercentage}` : ''}`
+                      : 'Gestor Autenticado'}
                   </span>
                 </div>
 

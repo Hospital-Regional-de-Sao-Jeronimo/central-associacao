@@ -28,6 +28,27 @@ export class BenefitsController {
     return this.benefitsService.getCategories();
   }
 
+  @Post('redeem')
+  redeemDiscount(
+    @Body()
+    body: {
+      associateId: string;
+      partnerBenefitId: string;
+      notes?: string;
+    },
+  ) {
+    return this.benefitsService.redeemDiscount(body);
+  }
+
+  @Get('redemptions')
+  getRedemptions(
+    @Query('partnerBenefitId') partnerBenefitId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 50;
+    return this.benefitsService.getRedemptions(partnerBenefitId, limitNum);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.benefitsService.findOne(id);
@@ -43,3 +64,4 @@ export class BenefitsController {
     return this.benefitsService.remove(id);
   }
 }
+

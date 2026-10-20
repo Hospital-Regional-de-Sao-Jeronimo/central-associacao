@@ -3,11 +3,13 @@ import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { BenefitsPage } from './components/BenefitsPage';
 import { AssociatesPage } from './components/AssociatesPage';
+import { PartnerAssociatesPage } from './components/PartnerAssociatesPage';
 import { LoginPage } from './components/LoginPage';
+import type { AuthUser } from './types';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<'home' | 'benefits' | 'associates'>('home');
-  const [user, setUser] = useState<{ id: string; name: string; email: string; role: string } | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoginPageOpen, setIsLoginPageOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
@@ -46,7 +48,7 @@ export function App() {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const handleLoginSuccess = (userData: { id: string; name: string; email: string; role: string }) => {
+  const handleLoginSuccess = (userData: AuthUser) => {
     setUser(userData);
     setIsLoginPageOpen(false);
     setActiveTab('associates');
@@ -69,6 +71,8 @@ export function App() {
     );
   }
 
+  const isAdmin = Boolean(user && (!user.role || user.role === 'ADMIN'));
+
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased transition-colors duration-200">
       {/* Header Navigation Bar */}
@@ -89,7 +93,7 @@ export function App() {
           <HomePage
             onNavigateToBenefits={() => setActiveTab('benefits')}
             onNavigateToLogin={() => setIsLoginPageOpen(true)}
-            isAuthenticated={Boolean(user)}
+            isAuthenticated={isAdmin}
           />
         )}
 
@@ -97,15 +101,23 @@ export function App() {
         {activeTab === 'benefits' && (
           <BenefitsPage
             isAuthenticated={Boolean(user)}
+            isAdmin={isAdmin}
             onLoginClick={() => setIsLoginPageOpen(true)}
           />
         )}
 
-        {/* View 3: Quadro de Associados (SÓ DISPONÍVEL SE ESTIVER AUTENTICADO) */}
-        {activeTab === 'associates' && user && <AssociatesPage />}
+        {/* View 3: Quadro de Associados (Gestor) ou Portal do Parceiro (Parceiro Credenciado) */}
+        {activeTab === 'associates' && user && (
+          user.role === 'PARTNER' ? (
+            <PartnerAssociatesPage user={user} />
+          ) : (
+            <AssociatesPage />
+          )
+        )}
       </main>
     </div>
   );
 }
 
 export default App;
+

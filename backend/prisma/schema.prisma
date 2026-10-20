@@ -28,11 +28,12 @@ model Associate {
   associationDate DateTime? @map("association_date")
   cardNumber      String?   @unique @map("card_number")
   cardRetrieved   Boolean   @default(false) @map("card_retrieved")
-  cardRetrievedAt DateTime? @map("card_retrieved_at")
-  active          Boolean   @default(true)
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
+  cardRetrievedAt DateTime?       @map("card_retrieved_at")
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  deletedAt       DateTime?       @map("deleted_at")
+  discountUsages  DiscountUsage[]
 
   @@map("associates")
 }
@@ -51,8 +52,24 @@ model PartnerBenefit {
   createdAt          DateTime        @default(now()) @map("created_at")
   updatedAt          DateTime        @updatedAt @map("updated_at")
   deletedAt          DateTime?       @map("deleted_at")
+  user               User?
+  discountUsages     DiscountUsage[]
 
   @@map("partner_benefits")
+}
+
+model DiscountUsage {
+  id               String         @id @default(uuid())
+  associateId      String         @map("associate_id")
+  partnerBenefitId String         @map("partner_benefit_id")
+  discountApplied  String         @map("discount_applied")
+  notes            String?
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  associate        Associate      @relation(fields: [associateId], references: [id], onDelete: Cascade)
+  partnerBenefit   PartnerBenefit @relation(fields: [partnerBenefitId], references: [id], onDelete: Cascade)
+
+  @@map("discount_usages")
 }
 
 model LdapUser {
@@ -94,20 +111,24 @@ model HomeContent {
 enum Role {
   ADMIN
   USER
+  PARTNER
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String   // Hashed with bcrypt
-  role      Role     @default(ADMIN)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id               String          @id @default(uuid())
+  name             String
+  email            String          @unique
+  password         String          // Hashed with bcrypt
+  role             Role            @default(ADMIN)
+  active           Boolean         @default(true)
+  partnerBenefitId String?         @unique @map("partner_benefit_id")
+  partnerBenefit   PartnerBenefit? @relation(fields: [partnerBenefitId], references: [id], onDelete: SetNull)
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
 
   @@map("users")
 }
+
 
 
 

@@ -1,4 +1,15 @@
-import type { Associate, BenefitCategory, PartnerBenefit, LdapUserSearchResult, LdapUser, RegisterLdapUserPayload, HomeContent } from '../types';
+import type {
+  Associate,
+  AuthUser,
+  BenefitCategory,
+  DiscountRedemption,
+  PartnerAssociateItem,
+  PartnerBenefit,
+  LdapUserSearchResult,
+  LdapUser,
+  RegisterLdapUserPayload,
+  HomeContent,
+} from '../types';
 
 const getApiBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
@@ -50,7 +61,7 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
 export const api = {
   // Auth
   login: (credentials: { email: string; password: string }) => {
-    return fetchJson<{ access_token: string; user: { id: string; name: string; email: string; role: string; hospital: string } }>(
+    return fetchJson<{ access_token: string; user: AuthUser }>(
       `${API_BASE_URL}/auth/login`,
       {
         method: 'POST',
@@ -90,6 +101,30 @@ export const api = {
       limit: number;
       totalPages: number;
     }>(`${API_BASE_URL}/associates${queryString}`);
+  },
+
+  getPartnerAssociates: (params?: {
+    search?: string;
+    active?: boolean;
+    page?: number;
+    limit?: number;
+    partnerBenefitId?: string | null;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.active !== undefined) query.append('active', String(params.active));
+    if (params?.page) query.append('page', String(params.page));
+    if (params?.limit) query.append('limit', String(params.limit));
+    if (params?.partnerBenefitId) query.append('partnerBenefitId', params.partnerBenefitId);
+
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    return fetchJson<{
+      data: PartnerAssociateItem[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(`${API_BASE_URL}/associates/partner-view${queryString}`);
   },
 
   getDepartments: () => {
@@ -164,6 +199,21 @@ export const api = {
     return fetchJson<PartnerBenefit>(`${API_BASE_URL}/benefits/${id}`, {
       method: 'DELETE',
     });
+  },
+
+  redeemDiscount: (payload: { associateId: string; partnerBenefitId: string; notes?: string }) => {
+    return fetchJson<DiscountRedemption>(`${API_BASE_URL}/benefits/redeem`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  getRedemptions: (params?: { partnerBenefitId?: string | null; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.partnerBenefitId) query.append('partnerBenefitId', params.partnerBenefitId);
+    if (params?.limit) query.append('limit', String(params.limit));
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    return fetchJson<DiscountRedemption[]>(`${API_BASE_URL}/benefits/redemptions${queryString}`);
   },
 
   // LDAP Integration

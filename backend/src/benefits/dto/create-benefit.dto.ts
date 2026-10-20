@@ -37,4 +37,13 @@ export class CreateBenefitDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @IsOptional()
+  @IsString()
+  accessEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  accessPassword?: string;
 }
+

@@ -256,6 +256,117 @@ export class AssociatesService implements OnModuleInit {
     };
   }
 
+  private maskCpf(cpf?: string | null): string {
+    if (!cpf) return 'Não informado';
+    const digits = cpf.replace(/\D/g, '');
+    if (digits.length !== 11) return '***.***.***-**';
+    return `***.${digits.slice(3, 6)}.${digits.slice(6, 9)}-**`;
+  }
+
+  async findAllForPartner(
+    search?: string,
+    active?: boolean,
+    page: number = 1,
+    limit: number = 15,
+    partnerBenefitId?: string,
+  ) {
+    const where: any = {
+      deletedAt: null,
+    };
+
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+      const cleanSearch = this.cleanCpf(searchTerm);
+
+      const orConditions: any[] = [
+        { name: { startsWith: searchTerm, mode: 'insensitive' } },
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { cardNumber: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+
+      if (cleanSearch) {
+        orConditions.push({ cpf: { contains: cleanSearch } });
+      } else {
+        orConditions.push({ cpf: { contains: searchTerm } });
+      }
+
+      where.OR = orConditions;
+    }
+
+    if (typeof active === 'boolean') {
+      where.active = active;
+    }
+
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.max(1, Math.min(100, Number(limit) || 15));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [total, rawAssociates] = await Promise.all([
+      this.prisma.associate.count({ where }),
+      this.prisma.associate.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: { name: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          cpf: true,
+          cardNumber: true,
+          active: true,
+          associationDate: true,
+        },
+      }),
+    ]);
+
+    const usageMap = new Map<string, { lastUsedAt: Date; usageCount: number }>();
+
+    if (partnerBenefitId && rawAssociates.length > 0) {
+      const stats = await this.prisma.$queryRaw<
+        Array<{ associate_id: string; last_used_at: Date; usage_count: number }>
+      >`
+        SELECT
+          associate_id,
+          MAX(created_at) AS last_used_at,
+          COUNT(*)::int AS usage_count
+        FROM discount_usages
+        WHERE partner_benefit_id = ${partnerBenefitId}
+        GROUP BY associate_id
+      `;
+
+      for (const s of stats) {
+        usageMap.set(s.associate_id, {
+          lastUsedAt: s.last_used_at,
+          usageCount: Number(s.usage_count),
+        });
+      }
+    }
+
+    const data = rawAssociates.map((a) => {
+      const u = usageMap.get(a.id);
+      return {
+        id: a.id,
+        name: a.name,
+        maskedCpf: this.maskCpf(a.cpf),
+        cardNumber: a.cardNumber,
+        active: a.active,
+        associationDate: a.associationDate,
+        lastUsedAt: u?.lastUsedAt || null,
+        usageCount: u?.usageCount || 0,
+      };
+    });
+
+    const totalPages = total > 0 ? Math.ceil(total / limitNum) : 1;
+
+    return {
+      data,
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages,
+    };
+  }
+
   async getDepartments(): Promise<string[]> {
     const associates = await this.prisma.associate.findMany({
       where: { deletedAt: null },

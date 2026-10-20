@@ -15,19 +15,23 @@ import {
   Filter,
   X,
   Lock,
+  KeyRound,
+  History,
 } from 'lucide-react';
 import { BENEFIT_CATEGORY_LABELS } from '../types';
-import type { BenefitCategory, PartnerBenefit } from '../types';
+import type { BenefitCategory, DiscountRedemption, PartnerBenefit } from '../types';
 import { api } from '../lib/api';
 import { BenefitModal } from './BenefitModal';
 
 interface BenefitsPageProps {
   isAuthenticated: boolean;
+  isAdmin?: boolean;
   onLoginClick: () => void;
 }
 
 export const BenefitsPage: React.FC<BenefitsPageProps> = ({
   isAuthenticated,
+  isAdmin = false,
   onLoginClick,
 }) => {
   const [benefits, setBenefits] = useState<PartnerBenefit[]>([]);
@@ -37,6 +41,29 @@ export const BenefitsPage: React.FC<BenefitsPageProps> = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBenefit, setEditingBenefit] = useState<PartnerBenefit | null>(null);
+
+  // Redemptions History Modal for Admin
+  const [historyFilterPartner, setHistoryFilterPartner] = useState<PartnerBenefit | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [redemptions, setRedemptions] = useState<DiscountRedemption[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const openRedemptionsHistory = async (partner?: PartnerBenefit) => {
+    setHistoryFilterPartner(partner || null);
+    setIsHistoryOpen(true);
+    setLoadingHistory(true);
+    try {
+      const data = await api.getRedemptions({
+        partnerBenefitId: partner?.id,
+        limit: 100,
+      });
+      setRedemptions(data || []);
+    } catch (err) {
+      console.error('Erro ao carregar histórico de descontos:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const fetchBenefits = async () => {
     setLoading(true);
@@ -72,7 +99,7 @@ export const BenefitsPage: React.FC<BenefitsPageProps> = ({
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!isAuthenticated) {
+    if (!isAdmin) {
       onLoginClick();
       return;
     }
@@ -108,26 +135,35 @@ export const BenefitsPage: React.FC<BenefitsPageProps> = ({
           </p>
         </div>
 
-        {isAuthenticated ? (
-          <button
-            onClick={() => {
-              setEditingBenefit(null);
-              setIsModalOpen(true);
-            }}
-            className="inline-flex items-center justify-center space-x-2 px-4 py-2 text-xs font-bold text-white bg-[#3b82f6] hover:bg-blue-600 rounded-xl shadow-md shadow-blue-500/20 transition cursor-pointer shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Cadastrar Parceiro</span>
-          </button>
-        ) : (
+        {isAdmin ? (
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onClick={() => openRedemptionsHistory()}
+              className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+            >
+              <History className="w-4 h-4 text-emerald-600" />
+              <span>Histórico de Descontos</span>
+            </button>
+            <button
+              onClick={() => {
+                setEditingBenefit(null);
+                setIsModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center space-x-2 px-4 py-2 text-xs font-bold text-white bg-[#3b82f6] hover:bg-blue-600 rounded-xl shadow-md shadow-blue-500/20 transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Cadastrar Parceiro</span>
+            </button>
+          </div>
+        ) : !isAuthenticated ? (
           <button
             onClick={onLoginClick}
             className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shrink-0"
           >
             <Lock className="w-3.5 h-3.5 text-amber-500" />
-            <span>Login do Gestor</span>
+            <span>Acesso Restrito</span>
           </button>
-        )}
+        ) : null}
       </div>
 
       {/* Filter Card Container */}
@@ -274,6 +310,35 @@ export const BenefitsPage: React.FC<BenefitsPageProps> = ({
                         {benefit.description}
                       </p>
                     )}
+
+                    {isAdmin && (
+                      <div className="pt-1 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                        {benefit.accessEmail ? (
+                          <span
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 font-bold truncate max-w-full"
+                            title={`Login do parceiro: ${benefit.accessEmail}`}
+                          >
+                            <KeyRound className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{benefit.accessEmail}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-semibold">
+                            <KeyRound className="w-3 h-3 shrink-0 opacity-60" />
+                            <span>Sem login configurado</span>
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => openRedemptionsHistory(benefit)}
+                          className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 font-extrabold transition cursor-pointer"
+                          title="Ver histórico de descontos liberados por este parceiro"
+                        >
+                          <History className="w-3 h-3" />
+                          <span>{benefit.redemptionsCount || 0} uso(s)</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -305,7 +370,7 @@ export const BenefitsPage: React.FC<BenefitsPageProps> = ({
                   </div>
 
                   {/* Admin Edit/Delete Icons */}
-                  {isAuthenticated && (
+                  {isAdmin && (
                     <div className="flex items-center space-x-1.5">
                       <button
                         onClick={() => {
@@ -313,7 +378,7 @@ export const BenefitsPage: React.FC<BenefitsPageProps> = ({
                           setIsModalOpen(true);
                         }}
                         className="p-1.5 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition cursor-pointer"
-                        title="Editar parceiro"
+                        title="Editar parceiro e credenciais de acesso"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
@@ -333,7 +398,7 @@ export const BenefitsPage: React.FC<BenefitsPageProps> = ({
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal de Cadastro / Edição */}
       <BenefitModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -343,6 +408,101 @@ export const BenefitsPage: React.FC<BenefitsPageProps> = ({
         onSave={handleSave}
         benefitToEdit={editingBenefit}
       />
+
+      {/* Modal de Histórico de Descontos Liberados (Visão Admin) */}
+      {isHistoryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl overflow-hidden flex flex-col max-h-[88vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                    {historyFilterPartner
+                      ? `Descontos Liberados: ${historyFilterPartner.name}`
+                      : 'Histórico Geral de Descontos Liberados'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {redemptions.length} registro(s) encontrado(s)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsHistoryOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              {loadingHistory ? (
+                <div className="p-10 text-center text-slate-400">
+                  <RotateCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
+                  <p className="text-xs font-semibold">Carregando histórico...</p>
+                </div>
+              ) : redemptions.length === 0 ? (
+                <div className="p-10 text-center text-slate-500">
+                  <History className="w-9 h-9 mx-auto mb-2 text-slate-300 dark:text-slate-700" />
+                  <p className="text-xs font-bold">Nenhum desconto registrado até o momento.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-slate-200/80 dark:border-slate-800 rounded-2xl">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <th className="py-3 px-4">Data / Hora</th>
+                        <th className="py-3 px-4">Estabelecimento</th>
+                        <th className="py-3 px-4">Associado</th>
+                        <th className="py-3 px-4">Desconto</th>
+                        <th className="py-3 px-4">Observação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800">
+                      {redemptions.map((r) => (
+                        <tr key={r.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                          <td className="py-3 px-4 whitespace-nowrap text-slate-600 dark:text-slate-300 font-semibold">
+                            {new Date(r.createdAt).toLocaleString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </td>
+                          <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">
+                            {r.partnerName}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-extrabold text-slate-900 dark:text-white">
+                              {r.associateName}
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-400">
+                              {r.associateMaskedCpf}
+                              {r.associateCardNumber ? ` • ${r.associateCardNumber}` : ''}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                              {r.discountApplied}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-slate-500 dark:text-slate-400">
+                            {r.notes || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

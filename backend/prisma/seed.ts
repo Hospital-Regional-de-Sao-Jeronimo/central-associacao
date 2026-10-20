@@ -136,9 +136,10 @@ async function main() {
   const adminPassword: string = process.env.ADMIN_PASSWORD || 'Central@HRSJ2026';
   const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
-  // Clean up old demo admin if email changed
+  // Clean up old demo admin if email changed (preserve PARTNER accounts)
   await prisma.user.deleteMany({
     where: {
+      role: 'ADMIN',
       email: {
         not: adminEmail,
       },

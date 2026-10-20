@@ -22,6 +22,27 @@ export class AssociatesController {
     return this.associatesService.getDepartments();
   }
 
+  @Get('partner-view')
+  findAllForPartner(
+    @Query('search') search?: string,
+    @Query('active') active?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('partnerBenefitId') partnerBenefitId?: string,
+  ) {
+    const activeBool = active !== undefined && active !== '' ? active === 'true' : undefined;
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 15;
+
+    return this.associatesService.findAllForPartner(
+      search,
+      activeBool,
+      pageNum,
+      limitNum,
+      partnerBenefitId,
+    );
+  }
+
   @Get()
   findAll(
     @Query('search') search?: string,

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Cross, Mail, Lock, LogIn, AlertCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { api } from '../lib/api';
+import type { AuthUser } from '../types';
 
 interface LoginPageProps {
-  onLoginSuccess: (user: { id: string; name: string; email: string; role: string }) => void;
+  onLoginSuccess: (user: AuthUser) => void;
   onCancel: () => void;
 }
 
@@ -56,7 +57,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onCancel }
 
           <div className="mt-3 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Área Restrita do Gestor</span>
+            <span>Acesso de Gestores e Parceiros</span>
           </div>
         </div>
 
@@ -82,7 +83,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onCancel }
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-[#0e1a2e] border border-slate-700 rounded-xl text-xs font-medium text-white focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder:text-slate-500 transition"
-                placeholder="admin@hrsj.sc.gov.br"
+                placeholder="email@parceiro.com.br ou admin@hrsj.sc.gov.br"
               />
             </div>
           </div>

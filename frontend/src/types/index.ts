@@ -26,6 +26,18 @@ export type BenefitCategory =
   | 'VAREJO'
   | 'OUTROS';
 
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'USER' | 'PARTNER' | string;
+  hospital?: string;
+  partnerBenefitId?: string | null;
+  partnerName?: string | null;
+  discountPercentage?: string | null;
+  partnerCategory?: BenefitCategory | string | null;
+}
+
 export interface PartnerBenefit {
   id: string;
   name: string;
@@ -37,9 +49,37 @@ export interface PartnerBenefit {
   website?: string | null;
   imageUrl?: string | null;
   active: boolean;
+  accessEmail?: string | null;
+  accessPassword?: string;
+  hasAccess?: boolean;
+  redemptionsCount?: number;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
+}
+
+export interface PartnerAssociateItem {
+  id: string;
+  name: string;
+  maskedCpf: string;
+  cardNumber?: string | null;
+  active: boolean;
+  associationDate?: string | null;
+  lastUsedAt?: string | null;
+  usageCount?: number;
+}
+
+export interface DiscountRedemption {
+  id: string;
+  associateId: string;
+  associateName: string;
+  associateMaskedCpf: string;
+  associateCardNumber?: string | null;
+  partnerBenefitId: string;
+  partnerName: string;
+  discountApplied: string;
+  notes?: string | null;
+  createdAt: string;
 }
 
 export const BENEFIT_CATEGORY_LABELS: Record<BenefitCategory, { label: string; color: string }> = {

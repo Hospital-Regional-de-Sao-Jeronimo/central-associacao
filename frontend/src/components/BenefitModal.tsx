@@ -11,6 +11,9 @@ import {
   Percent,
   Upload,
   Trash2,
+  KeyRound,
+  Mail,
+  Lock,
 } from 'lucide-react';
 import { BENEFIT_CATEGORY_LABELS } from '../types';
 import type { BenefitCategory, PartnerBenefit } from '../types';
@@ -38,6 +41,8 @@ export const BenefitModal: React.FC<BenefitModalProps> = ({
     website: '',
     imageUrl: '',
     active: true,
+    accessEmail: '',
+    accessPassword: '',
   });
 
   const [imageTab, setImageTab] = useState<'upload' | 'url'>('upload');
@@ -58,6 +63,8 @@ export const BenefitModal: React.FC<BenefitModalProps> = ({
         website: benefitToEdit.website || '',
         imageUrl: benefitToEdit.imageUrl || '',
         active: Boolean(benefitToEdit.active),
+        accessEmail: benefitToEdit.accessEmail || '',
+        accessPassword: '',
       });
       if (benefitToEdit.imageUrl && !benefitToEdit.imageUrl.startsWith('data:')) {
         setImageTab('url');
@@ -75,6 +82,8 @@ export const BenefitModal: React.FC<BenefitModalProps> = ({
         website: '',
         imageUrl: '',
         active: true,
+        accessEmail: '',
+        accessPassword: '',
       });
       setImageTab('upload');
     }
@@ -175,6 +184,23 @@ export const BenefitModal: React.FC<BenefitModalProps> = ({
         web = `https://${web}`;
         setFormData((prev) => ({ ...prev, website: web }));
       }
+    }
+
+    const emailTrimmed = formData.accessEmail.trim();
+    const passTrimmed = formData.accessPassword.trim();
+
+    if (emailTrimmed) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailTrimmed)) {
+        errors.accessEmail = 'Informe um e-mail de acesso válido.';
+      }
+      if (!benefitToEdit?.accessEmail && passTrimmed.length < 6) {
+        errors.accessPassword = 'Defina uma senha inicial com no mínimo 6 caracteres.';
+      } else if (benefitToEdit?.accessEmail && passTrimmed.length > 0 && passTrimmed.length < 6) {
+        errors.accessPassword = 'A nova senha deve ter no mínimo 6 caracteres.';
+      }
+    } else if (passTrimmed) {
+      errors.accessEmail = 'Informe o e-mail de login do parceiro.';
     }
 
     setFieldErrors(errors);
@@ -508,6 +534,83 @@ export const BenefitModal: React.FC<BenefitModalProps> = ({
               className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none text-slate-900 dark:text-white transition font-medium"
               placeholder="Desconto válido mediante apresentação da carteirinha da associação física ou digital."
             />
+          </div>
+
+          {/* Acesso do Parceiro ao Portal (Login & Senha) */}
+          <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 space-y-3">
+            <div className="flex items-start space-x-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                <KeyRound className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-extrabold text-slate-900 dark:text-white">
+                  Acesso do Parceiro ao Sistema (Opcional)
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Defina um login e senha para que este estabelecimento consulte associados elegíveis e registre a liberação de descontos.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* E-mail de Login */}
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  E-mail de Login do Parceiro
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    value={formData.accessEmail}
+                    onChange={(e) => {
+                      setFormData({ ...formData, accessEmail: e.target.value });
+                      if (fieldErrors.accessEmail) setFieldErrors((prev) => ({ ...prev, accessEmail: '' }));
+                    }}
+                    className={`w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border rounded-xl focus:ring-2 focus:outline-none text-slate-900 dark:text-white transition font-medium ${
+                      fieldErrors.accessEmail
+                        ? 'border-rose-400 focus:ring-rose-500'
+                        : 'border-slate-200 dark:border-slate-700 focus:ring-blue-500'
+                    }`}
+                    placeholder="parceiro@empresa.com.br"
+                  />
+                </div>
+                {fieldErrors.accessEmail && (
+                  <span className="text-[11px] text-rose-500 font-bold mt-1 block">
+                    {fieldErrors.accessEmail}
+                  </span>
+                )}
+              </div>
+
+              {/* Senha de Acesso */}
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  {benefitToEdit?.accessEmail ? 'Nova Senha (se quiser trocar)' : 'Senha de Acesso'}
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="password"
+                    value={formData.accessPassword}
+                    onChange={(e) => {
+                      setFormData({ ...formData, accessPassword: e.target.value });
+                      if (fieldErrors.accessPassword) setFieldErrors((prev) => ({ ...prev, accessPassword: '' }));
+                    }}
+                    className={`w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border rounded-xl focus:ring-2 focus:outline-none text-slate-900 dark:text-white transition font-medium ${
+                      fieldErrors.accessPassword
+                        ? 'border-rose-400 focus:ring-rose-500'
+                        : 'border-slate-200 dark:border-slate-700 focus:ring-blue-500'
+                    }`}
+                    placeholder={benefitToEdit?.accessEmail ? 'Manter senha atual' : 'Mínimo 6 caracteres'}
+                  />
+                </div>
+                {fieldErrors.accessPassword && (
+                  <span className="text-[11px] text-rose-500 font-bold mt-1 block">
+                    {fieldErrors.accessPassword}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Checkbox Ativo */}
