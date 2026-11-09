@@ -251,6 +251,16 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+
+  // PDF Export (LGPD-compliant)
+  getAssociatesPdfUrl: (params?: { search?: string; active?: boolean; partner?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.search && params.search.trim()) query.append('search', params.search.trim());
+    if (params?.active !== undefined) query.append('active', String(params.active));
+    if (params?.partner && params.partner.trim()) query.append('partner', params.partner.trim());
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return `${API_BASE_URL}/associates/export/pdf${qs}`;
+  },
 };
 
 

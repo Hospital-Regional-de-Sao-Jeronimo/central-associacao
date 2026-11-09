@@ -17,6 +17,7 @@ import {
   Lock,
   KeyRound,
   History,
+  FileDown,
 } from 'lucide-react';
 import { BENEFIT_CATEGORY_LABELS } from '../types';
 import type { BenefitCategory, DiscountRedemption, PartnerBenefit } from '../types';
@@ -135,35 +136,48 @@ export const BenefitsPage: React.FC<BenefitsPageProps> = ({
           </p>
         </div>
 
-        {isAdmin ? (
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              onClick={() => openRedemptionsHistory()}
-              className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-            >
-              <History className="w-4 h-4 text-emerald-600" />
-              <span>Histórico de Descontos</span>
-            </button>
-            <button
-              onClick={() => {
-                setEditingBenefit(null);
-                setIsModalOpen(true);
-              }}
-              className="inline-flex items-center justify-center space-x-2 px-4 py-2 text-xs font-bold text-white bg-[#3b82f6] hover:bg-blue-600 rounded-xl shadow-md shadow-blue-500/20 transition cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Cadastrar Parceiro</span>
-            </button>
-          </div>
-        ) : !isAuthenticated ? (
-          <button
-            onClick={onLoginClick}
-            className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shrink-0"
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <a
+            href={api.getAssociatesPdfUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition cursor-pointer"
+            title="Baixar lista oficial de associados para conferência em convênios (PDF com conformidade LGPD)"
           >
-            <Lock className="w-3.5 h-3.5 text-amber-500" />
-            <span>Acesso Restrito</span>
-          </button>
-        ) : null}
+            <FileDown className="w-4 h-4" />
+            <span>Baixar Lista de Associados (PDF)</span>
+          </a>
+
+          {isAdmin ? (
+            <>
+              <button
+                onClick={() => openRedemptionsHistory()}
+                className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+              >
+                <History className="w-4 h-4 text-emerald-600" />
+                <span>Histórico de Descontos</span>
+              </button>
+              <button
+                onClick={() => {
+                  setEditingBenefit(null);
+                  setIsModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center space-x-2 px-4 py-2 text-xs font-bold text-white bg-[#3b82f6] hover:bg-blue-600 rounded-xl shadow-md shadow-blue-500/20 transition cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Cadastrar Parceiro</span>
+              </button>
+            </>
+          ) : !isAuthenticated ? (
+            <button
+              onClick={onLoginClick}
+              className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shrink-0"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-500" />
+              <span>Acesso Restrito</span>
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {/* Filter Card Container */}

@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Printer,
+  FileDown,
   Cross,
 } from 'lucide-react';
 
@@ -314,6 +315,20 @@ export const AssociatesPage: React.FC = () => {
                 </>
               )}
             </button>
+
+            <a
+              href={api.getAssociatesPdfUrl({
+                search: search || undefined,
+                active: activeFilter === 'all' ? undefined : activeFilter === 'active',
+              })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition cursor-pointer"
+              title="Baixar lista completa em PDF protegida com conformidade LGPD"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>Exportar PDF (LGPD)</span>
+            </a>
 
             <button
               onClick={() => setIsLdapModalOpen(true)}

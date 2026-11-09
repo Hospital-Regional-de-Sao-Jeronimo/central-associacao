@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import PDFDocument from 'pdfkit';
 import { PrismaService } from '../prisma/prisma.service';
 import { LdapService, normalizeDepartmentName } from '../ldap/ldap.service';
 import { CreateAssociateDto } from './dto/create-associate.dto';
@@ -604,5 +605,230 @@ export class AssociatesService implements OnModuleInit {
       reactivated,
       errors,
     };
+  }
+
+  async generateAssociatesPdf(options: {
+    search?: string;
+    active?: boolean;
+    partnerName?: string;
+  }): Promise<Buffer> {
+    const where: any = {
+      deletedAt: null,
+    };
+
+    if (options.search && options.search.trim()) {
+      const searchTerm = options.search.trim();
+      const cleanSearch = this.cleanCpf(searchTerm);
+
+      const orConditions: any[] = [
+        { name: { startsWith: searchTerm, mode: 'insensitive' } },
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { cardNumber: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+
+      if (cleanSearch) {
+        orConditions.push({ cpf: { contains: cleanSearch } });
+      } else {
+        orConditions.push({ cpf: { contains: searchTerm } });
+      }
+
+      where.OR = orConditions;
+    }
+
+    if (typeof options.active === 'boolean') {
+      where.active = options.active;
+    }
+
+    const associates = await this.prisma.associate.findMany({
+      where,
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        cpf: true,
+        cardNumber: true,
+        active: true,
+      },
+    });
+
+    return new Promise<Buffer>((resolve, reject) => {
+      const doc = new PDFDocument({
+        margin: 36,
+        size: 'A4',
+        bufferPages: true,
+      });
+
+      const buffers: Buffer[] = [];
+      doc.on('data', (chunk) => buffers.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+      doc.on('error', reject);
+
+      const pageWidth = doc.page.width;
+      const leftMargin = 36;
+      const contentWidth = pageWidth - leftMargin * 2;
+
+      const colSeqWidth = 28;
+      const colNameWidth = 240;
+      const colCpfWidth = 100;
+      const colCardWidth = 85;
+      const colStatusWidth = 70;
+      const rowHeight = 16;
+      const maxY = doc.page.height - 45;
+
+      const drawHeader = (isFirstPage: boolean) => {
+        if (isFirstPage) {
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(13)
+            .fillColor('#0f172a')
+            .text('ASSOCIAÇÃO DOS FUNCIONÁRIOS DO HRSJ', leftMargin, 36, { align: 'center' });
+
+          doc
+            .font('Helvetica')
+            .fontSize(9)
+            .fillColor('#475569')
+            .text('Relação Oficial de Associados Elegíveis para Convênios e Benefícios', { align: 'center' });
+
+          doc.moveDown(0.3);
+
+          const nowStr = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+          let metaText = `Emissão: ${nowStr} • Total Listado: ${associates.length} associados`;
+          if (options.partnerName) {
+            metaText += ` • Estabelecimento: ${options.partnerName}`;
+          }
+          doc
+            .font('Helvetica')
+            .fontSize(7.5)
+            .fillColor('#64748b')
+            .text(metaText, { align: 'center' });
+
+          doc.moveDown(0.5);
+
+          // LGPD Notice Box
+          const boxY = doc.y;
+          const boxHeight = 32;
+          doc
+            .rect(leftMargin, boxY, contentWidth, boxHeight)
+            .fillAndStroke('#eff6ff', '#bfdbfe');
+
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(7.2)
+            .fillColor('#1e40af')
+            .text('TERMO DE CONFORMIDADE LGPD (Lei nº 13.709/2018):', leftMargin + 8, boxY + 5, {
+              continued: true,
+            })
+            .font('Helvetica')
+            .fillColor('#1e3a8a')
+            .text(
+              ' Documento confidencial de uso exclusivo para conferência de associados em estabelecimentos conveniados. Proibido repasse ou divulgação externa. CPFs parcialmente mascarados para proteção dos titulares.',
+              { lineGap: 1 }
+            );
+
+          doc.y = boxY + boxHeight + 8;
+        } else {
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(8)
+            .fillColor('#475569')
+            .text('ASSOCIAÇÃO DOS FUNCIONÁRIOS DO HRSJ • Relação de Associados (Continuação)', leftMargin, 32);
+
+          doc.y = 46;
+        }
+
+        // Table Header
+        const tableHeaderY = doc.y;
+        doc
+          .rect(leftMargin, tableHeaderY, contentWidth, 18)
+          .fill('#1e293b');
+
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(8)
+          .fillColor('#ffffff');
+
+        doc.text('#', leftMargin + 5, tableHeaderY + 5, { width: colSeqWidth, lineBreak: false });
+        doc.text('Nome do Associado', leftMargin + colSeqWidth + 5, tableHeaderY + 5, { width: colNameWidth, lineBreak: false });
+        doc.text('CPF', leftMargin + colSeqWidth + colNameWidth + 3, tableHeaderY + 5, { width: colCpfWidth, lineBreak: false });
+        doc.text('Carteirinha', leftMargin + colSeqWidth + colNameWidth + colCpfWidth + 3, tableHeaderY + 5, { width: colCardWidth, lineBreak: false });
+        doc.text('Situação', leftMargin + colSeqWidth + colNameWidth + colCpfWidth + colCardWidth + 3, tableHeaderY + 5, { width: colStatusWidth, lineBreak: false });
+
+        doc.y = tableHeaderY + 18;
+      };
+
+      // Start drawing
+      drawHeader(true);
+
+      associates.forEach((assoc, index) => {
+        if (doc.y + rowHeight > maxY) {
+          doc.addPage();
+          drawHeader(false);
+        }
+
+        const currentY = doc.y;
+        const isEven = index % 2 === 0;
+
+        if (isEven) {
+          doc
+            .rect(leftMargin, currentY, contentWidth, rowHeight)
+            .fill('#f8fafc');
+        }
+
+        doc
+          .strokeColor('#f1f5f9')
+          .lineWidth(0.5)
+          .moveTo(leftMargin, currentY + rowHeight)
+          .lineTo(leftMargin + contentWidth, currentY + rowHeight)
+          .stroke();
+
+        doc.font('Helvetica').fontSize(7.2).fillColor('#64748b');
+        doc.text(String(index + 1), leftMargin + 5, currentY + 4, { width: colSeqWidth, lineBreak: false });
+
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#1e293b');
+        doc.text(assoc.name || 'Sem nome', leftMargin + colSeqWidth + 5, currentY + 4, {
+          width: colNameWidth - 10,
+          lineBreak: false,
+          ellipsis: true,
+        });
+
+        doc.font('Helvetica').fontSize(7.2).fillColor('#334155');
+        const masked = this.maskCpf(assoc.cpf);
+        doc.text(masked, leftMargin + colSeqWidth + colNameWidth + 3, currentY + 4, { width: colCpfWidth, lineBreak: false });
+
+        const card = assoc.cardNumber ? assoc.cardNumber.trim() : '-';
+        doc.text(card, leftMargin + colSeqWidth + colNameWidth + colCpfWidth + 3, currentY + 4, { width: colCardWidth, lineBreak: false });
+
+        const isActive = assoc.active;
+        if (isActive) {
+          doc.font('Helvetica-Bold').fontSize(7.2).fillColor('#15803d');
+          doc.text('ATIVO', leftMargin + colSeqWidth + colNameWidth + colCpfWidth + colCardWidth + 3, currentY + 4, { lineBreak: false });
+        } else {
+          doc.font('Helvetica-Bold').fontSize(7.2).fillColor('#b91c1c');
+          doc.text('INATIVO', leftMargin + colSeqWidth + colNameWidth + colCpfWidth + colCardWidth + 3, currentY + 4, { lineBreak: false });
+        }
+
+        doc.y = currentY + rowHeight;
+      });
+
+      const range = doc.bufferedPageRange();
+      for (let i = range.start; i < range.start + range.count; i++) {
+        doc.switchToPage(i);
+        const oldBottomMargin = doc.page.margins.bottom;
+        doc.page.margins.bottom = 0;
+        doc
+          .font('Helvetica')
+          .fontSize(6.8)
+          .fillColor('#94a3b8')
+          .text(
+            `Página ${i + 1} de ${range.count} • Associação dos Funcionários do HRSJ • Uso Restrito para Convênios (LGPD)`,
+            leftMargin,
+            doc.page.height - 25,
+            { align: 'center', width: contentWidth, lineBreak: false }
+          );
+        doc.page.margins.bottom = oldBottomMargin;
+      }
+
+      doc.end();
+    });
   }
 }

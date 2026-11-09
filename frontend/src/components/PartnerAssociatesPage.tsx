@@ -14,6 +14,7 @@ import {
   Percent,
   Clock,
   FileText,
+  FileDown,
   X,
   AlertCircle,
   Check,
@@ -315,6 +316,22 @@ export const PartnerAssociatesPage: React.FC<PartnerAssociatesPageProps> = ({ us
                   Inativos
                 </button>
               </div>
+
+              {/* Download PDF button (LGPD-compliant) */}
+              <a
+                href={api.getAssociatesPdfUrl({
+                  search: search || undefined,
+                  active: statusFilter === 'all' ? undefined : statusFilter === 'active',
+                  partner: partnerName,
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm shrink-0 cursor-pointer"
+                title="Baixar lista de associados em PDF protegida com conformidade LGPD"
+              >
+                <FileDown className="w-4 h-4" />
+                <span>Baixar Lista (PDF)</span>
+              </a>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">

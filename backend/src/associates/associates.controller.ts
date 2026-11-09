@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Query, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, Query, Patch, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { AssociatesService } from './associates.service';
 import { CreateAssociateDto } from './dto/create-associate.dto';
 import { UpdateAssociateDto } from './dto/update-associate.dto';
@@ -41,6 +42,32 @@ export class AssociatesController {
       limitNum,
       partnerBenefitId,
     );
+  }
+
+  @Get('export/pdf')
+  async exportPdf(
+    @Res() res: Response,
+    @Query('search') search?: string,
+    @Query('active') active?: string,
+    @Query('partner') partner?: string,
+  ) {
+    const activeBool = active !== undefined && active !== '' ? active === 'true' : undefined;
+    const buffer = await this.associatesService.generateAssociatesPdf({
+      search,
+      active: activeBool,
+      partnerName: partner,
+    });
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'inline; filename="lista_associados_hrsj.pdf"',
+      'Content-Length': buffer.length.toString(),
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
+    });
+
+    res.end(buffer);
   }
 
   @Get()

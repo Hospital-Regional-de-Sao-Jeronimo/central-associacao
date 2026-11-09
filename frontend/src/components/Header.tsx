@@ -1,5 +1,6 @@
 import React from 'react';
-import { LogOut, Cross, Lock, Home, Sparkles, Users, Sun, Moon } from 'lucide-react';
+import { LogOut, Cross, Lock, Home, Sparkles, Users, Sun, Moon, FileDown } from 'lucide-react';
+import { api } from '../lib/api';
 import type { AuthUser } from '../types';
 
 interface HeaderProps {
@@ -107,6 +108,19 @@ export const Header: React.FC<HeaderProps> = ({
                 </>
               )}
             </button>
+
+            {/* Quick Download PDF Button (always visible) */}
+            <a
+              href={api.getAssociatesPdfUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-1.5 px-3 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-sm transition cursor-pointer"
+              title="Acesso rápido: Baixar lista oficial de associados para convênios (PDF com conformidade LGPD)"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Lista de Associados (PDF)</span>
+              <span className="sm:hidden">PDF</span>
+            </a>
 
             {user ? (
               <div className="flex items-center space-x-3">

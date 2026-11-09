@@ -17,6 +17,7 @@ import {
   Loader2,
   Calculator,
   UserCheck,
+  FileDown,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import type { HomeContent, HistoryBlock, Associate } from '../types';
@@ -298,6 +299,17 @@ export const HomePage: React.FC<HomePageProps> = ({
               <span>Ver Estabelecimentos Credenciados</span>
               <ChevronRight className="w-4 h-4" />
             </button>
+
+            <a
+              href={api.getAssociatesPdfUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-2 px-5 py-3 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-lg shadow-emerald-600/25 transition duration-200 cursor-pointer"
+              title="Baixar lista oficial de associados para conferência em convênios (PDF com conformidade LGPD)"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>Baixar Lista de Associados (PDF)</span>
+            </a>
 
             {!isAuthenticated && (
               <button
